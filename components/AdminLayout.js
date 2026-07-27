@@ -34,6 +34,7 @@ const NAV = [
   { href: "/dashboard/bus-types", label: "Bus Types", icon: Layers },
   { href: "/dashboard/users", label: "Users", icon: Users },
   { href: "/dashboard/operators", label: "Operators", icon: Building2 },
+  { href: "/dashboard/operator-applications", label: "Applications", icon: FileText },
   // { href: "/dashboard/partners", label: "API Users", icon: Key },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
   { href: "/dashboard/profile", label: "Profile", icon: UserCircle },
