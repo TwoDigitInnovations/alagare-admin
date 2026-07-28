@@ -40,18 +40,18 @@ export default function OperatorDashboard() {
   const initials = (user.fullname || "O").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
 
   const MODULES = [
-    { icon: Ticket, label: "Booking Management", sub: "View & manage bookings", href: "#", color: "#eaf5dd", iconColor: GREEN, soon: false },
+    { icon: Ticket, label: "Booking Management", sub: "View & manage bookings", href: "/dashboard/operator-bookings", color: "#eaf5dd", iconColor: GREEN, soon: false },
     { icon: Bus, label: "Fleet & Schedule", sub: "Buses, routes & stations", href: "/dashboard/operator-fleet", color: "#eaf5dd", iconColor: GREEN, soon: false },
-    { icon: DollarSign, label: "Pricing Management", sub: "Fares, discounts & campaigns", href: "#", color: "#fff8ec", iconColor: ORANGE, soon: true },
-    { icon: TrendingUp, label: "Revenue & Commission", sub: "Earnings & settlements", href: "#", color: "#fff8ec", iconColor: ORANGE, soon: true },
-    { icon: BarChart3, label: "Reports & Analytics", sub: "Business performance", href: "#", color: "#eaf5dd", iconColor: GREEN, soon: true },
+    { icon: DollarSign, label: "Pricing Management", sub: "Fares, discounts & campaigns", href: "/dashboard/operator-pricing", color: "#fff8ec", iconColor: ORANGE, soon: false },
+    { icon: TrendingUp, label: "Revenue & Commission", sub: "Earnings & settlements", href: "/dashboard/operator-revenue", color: "#fff8ec", iconColor: ORANGE, soon: false },
+    { icon: BarChart3, label: "Reports & Analytics", sub: "Business performance", href: "/dashboard/operator-reports", color: "#eaf5dd", iconColor: GREEN, soon: false },
   ];
 
   return (
     <div className="min-h-screen bg-[#f4f6f8]">
 
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#e2e8f0] bg-white px-4 sm:px-8">
-        <div className="flex items-center gap-3">
+        <div onClick={() => router.push("/dashboard/operator-profile")} className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
           <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-black text-white" style={{ backgroundColor: GREEN }}>
             {initials}
           </div>
