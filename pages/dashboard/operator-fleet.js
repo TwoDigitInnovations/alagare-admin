@@ -24,13 +24,25 @@ const calcDuration = (dep, arr) => {
   } catch { return ""; }
 };
 
-function CitySearch({ label, required, value, onChange }) {
+function CitySearch({ label, required, value, onChange, router }) {
   const [query, setQuery] = useState(value || "");
+  const [masterCities, setMasterCities] = useState([]);
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
-  const [searching, setSearching] = useState(false);
-  const debounce = useRef(null);
   const wrapRef = useRef(null);
+
+  useEffect(() => {
+    setQuery(value || "");
+  }, [value]);
+
+  useEffect(() => {
+    Api("get", "operator/fleet/cities", null, router)
+      .then((res) => {
+        const list = res?.data?.cities || res?.cities || [];
+        setMasterCities(list);
+      })
+      .catch(() => {});
+  }, [router]);
 
   useEffect(() => {
     const handler = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
@@ -38,26 +50,27 @@ function CitySearch({ label, required, value, onChange }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  useEffect(() => {
-    if (debounce.current) clearTimeout(debounce.current);
-    if (query.trim().length < 2) { setResults([]); return; }
-    setSearching(true);
-    debounce.current = setTimeout(async () => {
-      try {
-        const r = await searchBusPlaces(query.trim(), 10, axios);
-        setResults(r);
-        setOpen(true);
-      } catch { setResults([]); }
-      finally { setSearching(false); }
-    }, 350);
-  }, [query]);
+  const handleInputChange = (text) => {
+    setQuery(text);
+    onChange(text);
+    if (!text.trim()) {
+      setResults(masterCities);
+      setOpen(true);
+      return;
+    }
+    const filtered = masterCities.filter(c => 
+      c.name.toLowerCase().includes(text.toLowerCase()) || 
+      (c.country && c.country.toLowerCase().includes(text.toLowerCase()))
+    );
+    setResults(filtered);
+    setOpen(true);
+  };
 
-  const select = (place) => {
-    const name = place.city || place.name || place.label.split(",")[0].trim();
+  const select = (cityObj) => {
+    const name = cityObj.name;
     setQuery(name);
     onChange(name);
     setOpen(false);
-    setResults([]);
   };
 
   return (
@@ -68,24 +81,35 @@ function CitySearch({ label, required, value, onChange }) {
       <div className="relative">
         <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
         <input value={query}
-          onChange={e => { setQuery(e.target.value); onChange(e.target.value); }}
-          onFocus={() => results.length > 0 && setOpen(true)}
-          placeholder={`Search ${label.toLowerCase()}...`}
+          onChange={e => handleInputChange(e.target.value)}
+          onFocus={() => {
+            const currentFiltered = query.trim() 
+              ? masterCities.filter(c => c.name.toLowerCase().includes(query.toLowerCase()))
+              : masterCities;
+            setResults(currentFiltered);
+            setOpen(true);
+          }}
+          placeholder={`Select ${label.toLowerCase()} city...`}
           className="w-full rounded-xl border border-[#e2e8f0] bg-white py-2.5 pl-8 pr-4 text-sm outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20" />
-        {searching && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#94a3b8]">...</span>}
       </div>
-      {open && results.length > 0 && (
+      {open && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-52 overflow-y-auto rounded-xl border border-[#e2e8f0] bg-white shadow-lg">
-          {results.map(r => (
-            <button key={r.id} type="button" onMouseDown={() => select(r)}
-              className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left hover:bg-[#f4f9f0] transition-colors">
-              <MapPin size={13} className="mt-0.5 flex-shrink-0 text-[#4a6d00]" />
-              <div>
-                <p className="text-sm font-medium text-[#1e293b]">{r.city || r.name}</p>
-                {r.parentCity && <p className="text-xs text-[#94a3b8]">{r.parentCity}{r.country ? `, ${r.country}` : ""}</p>}
-              </div>
-            </button>
-          ))}
+          {results.length > 0 ? (
+            results.map(r => (
+              <button key={r.id || r._id || r.name} type="button" onMouseDown={() => select(r)}
+                className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left hover:bg-[#f4f9f0] transition-colors">
+                <MapPin size={13} className="mt-0.5 flex-shrink-0 text-[#4a6d00]" />
+                <div>
+                  <p className="text-sm font-medium text-[#1e293b]">{r.name}</p>
+                  {r.country && <p className="text-xs text-[#94a3b8]">{r.country}</p>}
+                </div>
+              </button>
+            ))
+          ) : (
+            <div className="px-3 py-3 text-xs text-[#94a3b8] text-center">
+              No matching city in Admin Master Cities.
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -402,8 +426,8 @@ export default function OperatorFleet() {
       <Modal open={routeModal} onClose={() => setRouteModal(false)} title={editRoute ? "Edit Route" : "Add New Route"}>
         <form onSubmit={saveRoute} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <CitySearch label="From" required value={routeForm.from} onChange={v => setRouteForm(p => ({ ...p, from: v }))} />
-            <CitySearch label="To" required value={routeForm.to} onChange={v => setRouteForm(p => ({ ...p, to: v }))} />
+            <CitySearch label="From" required value={routeForm.from} onChange={v => setRouteForm(p => ({ ...p, from: v }))} router={router} />
+            <CitySearch label="To" required value={routeForm.to} onChange={v => setRouteForm(p => ({ ...p, to: v }))} router={router} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
