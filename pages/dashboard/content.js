@@ -16,20 +16,30 @@ export default function ContentPage() {
     termsBody: "",
     privacyTitle: "Privacy Policy",
     privacyBody: "",
+    operatorTermsTitle: "Operator Terms of Service",
+    operatorTermsBody: "",
+    operatorPrivacyTitle: "Operator Privacy Policy",
+    operatorPrivacyBody: "",
     faqs: [],
+    operatorFaqs: [],
   });
 
   useEffect(() => {
     Api("get", "admin/content", null, router)
       .then((res) => {
-        const c = res?.data?.content;
+        const c = res?.data?.content || res?.content;
         if (c) {
           setForm({
             termsTitle: c.termsTitle || "Terms of Service",
             termsBody: c.termsBody || "",
             privacyTitle: c.privacyTitle || "Privacy Policy",
             privacyBody: c.privacyBody || "",
+            operatorTermsTitle: c.operatorTermsTitle || "Operator Terms of Service",
+            operatorTermsBody: c.operatorTermsBody || "",
+            operatorPrivacyTitle: c.operatorPrivacyTitle || "Operator Privacy Policy",
+            operatorPrivacyBody: c.operatorPrivacyBody || "",
             faqs: Array.isArray(c.faqs) ? c.faqs : [],
+            operatorFaqs: Array.isArray(c.operatorFaqs) ? c.operatorFaqs : [],
           });
         }
       })
@@ -42,17 +52,22 @@ export default function ContentPage() {
     setSaving(true);
     try {
       const res = await Api("put", "admin/content", form, router);
-      const c = res?.data?.content;
+      const c = res?.data?.content || res?.content;
       if (c) {
         setForm({
           termsTitle: c.termsTitle || "",
           termsBody: c.termsBody || "",
           privacyTitle: c.privacyTitle || "",
           privacyBody: c.privacyBody || "",
+          operatorTermsTitle: c.operatorTermsTitle || "",
+          operatorTermsBody: c.operatorTermsBody || "",
+          operatorPrivacyTitle: c.operatorPrivacyTitle || "",
+          operatorPrivacyBody: c.operatorPrivacyBody || "",
           faqs: Array.isArray(c.faqs) ? c.faqs : [],
+          operatorFaqs: Array.isArray(c.operatorFaqs) ? c.operatorFaqs : [],
         });
       }
-      toastSuccess("Content saved — app will show updated text");
+      toastSuccess("Content saved — app and website will show updated text");
     } catch (err) {
       toastError(err?.message || "Failed to save");
     } finally {
@@ -81,6 +96,27 @@ export default function ContentPage() {
     }));
   };
 
+  const addOperatorFaq = () => {
+    setForm((prev) => ({
+      ...prev,
+      operatorFaqs: [...(prev.operatorFaqs || []), { question: "", answer: "" }],
+    }));
+  };
+
+  const updateOperatorFaq = (index, key, value) => {
+    setForm((prev) => {
+      const operatorFaqs = (prev.operatorFaqs || []).map((f, i) => (i === index ? { ...f, [key]: value } : f));
+      return { ...prev, operatorFaqs };
+    });
+  };
+
+  const removeOperatorFaq = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      operatorFaqs: (prev.operatorFaqs || []).filter((_, i) => i !== index),
+    }));
+  };
+
   if (loading) {
     return (
       <AdminLayout title="Content">
@@ -92,14 +128,17 @@ export default function ContentPage() {
   return (
     <AdminLayout title="Content">
       <p className="mb-4 text-sm text-[#64748b]">
-        Manage Terms, Privacy Policy, and FAQs shown in the mobile app.
+        Manage Passenger App & Operator Partner Terms, Privacy Policies, and FAQs.
       </p>
 
       <div className="mb-4 flex flex-wrap gap-2">
         {[
-          { id: "terms", label: "Terms of Service", Icon: FileText },
-          { id: "privacy", label: "Privacy Policy", Icon: Shield },
-          { id: "faqs", label: "FAQs", Icon: HelpCircle },
+          { id: "terms", label: "App Terms", Icon: FileText },
+          { id: "privacy", label: "App Privacy", Icon: Shield },
+          { id: "faqs", label: "App FAQs", Icon: HelpCircle },
+          { id: "operator-terms", label: "Operator Terms", Icon: FileText },
+          { id: "operator-privacy", label: "Operator Privacy", Icon: Shield },
+          { id: "operator-faqs", label: "Operator FAQs", Icon: HelpCircle },
         ].map(({ id, label, Icon }) => (
           <button
             key={id}
@@ -107,7 +146,7 @@ export default function ContentPage() {
             onClick={() => setTab(id)}
             className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
               tab === id
-                ? "bg-[#4a6d00] text-white"
+                ? "bg-[#4a6d00] text-white shadow-sm"
                 : "border border-[#e2e8f0] bg-white text-[#64748b] hover:bg-[#f8fafc]"
             }`}
           >
@@ -121,7 +160,7 @@ export default function ContentPage() {
         <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
           {tab === "terms" && (
             <>
-              <label className="mb-1 block text-xs font-medium text-[#64748b]">Title</label>
+              <label className="mb-1 block text-xs font-medium text-[#64748b]">Passenger Terms Title</label>
               <input
                 value={form.termsTitle}
                 onChange={(e) => setForm({ ...form, termsTitle: e.target.value })}
@@ -132,14 +171,14 @@ export default function ContentPage() {
                 key="terms-editor"
                 value={form.termsBody}
                 onChange={(html) => setForm((prev) => ({ ...prev, termsBody: html }))}
-                placeholder="Write Terms of Service..."
+                placeholder="Write Passenger Terms of Service..."
               />
             </>
           )}
 
           {tab === "privacy" && (
             <>
-              <label className="mb-1 block text-xs font-medium text-[#64748b]">Title</label>
+              <label className="mb-1 block text-xs font-medium text-[#64748b]">Passenger Privacy Title</label>
               <input
                 value={form.privacyTitle}
                 onChange={(e) => setForm({ ...form, privacyTitle: e.target.value })}
@@ -150,7 +189,43 @@ export default function ContentPage() {
                 key="privacy-editor"
                 value={form.privacyBody}
                 onChange={(html) => setForm((prev) => ({ ...prev, privacyBody: html }))}
-                placeholder="Write Privacy Policy..."
+                placeholder="Write Passenger Privacy Policy..."
+              />
+            </>
+          )}
+
+          {tab === "operator-terms" && (
+            <>
+              <label className="mb-1 block text-xs font-medium text-[#64748b]">Operator Partner Terms Title</label>
+              <input
+                value={form.operatorTermsTitle}
+                onChange={(e) => setForm({ ...form, operatorTermsTitle: e.target.value })}
+                className="mb-4 w-full rounded-xl border border-[#e2e8f0] px-3 py-2.5 text-sm outline-none focus:border-[#4a6d00]"
+              />
+              <label className="mb-1 block text-xs font-medium text-[#64748b]">Body (Jodit)</label>
+              <ContentEditor
+                key="op-terms-editor"
+                value={form.operatorTermsBody}
+                onChange={(html) => setForm((prev) => ({ ...prev, operatorTermsBody: html }))}
+                placeholder="Write Operator Partner Terms of Service..."
+              />
+            </>
+          )}
+
+          {tab === "operator-privacy" && (
+            <>
+              <label className="mb-1 block text-xs font-medium text-[#64748b]">Operator Partner Privacy Title</label>
+              <input
+                value={form.operatorPrivacyTitle}
+                onChange={(e) => setForm({ ...form, operatorPrivacyTitle: e.target.value })}
+                className="mb-4 w-full rounded-xl border border-[#e2e8f0] px-3 py-2.5 text-sm outline-none focus:border-[#4a6d00]"
+              />
+              <label className="mb-1 block text-xs font-medium text-[#64748b]">Body (Jodit)</label>
+              <ContentEditor
+                key="op-privacy-editor"
+                value={form.operatorPrivacyBody}
+                onChange={(html) => setForm((prev) => ({ ...prev, operatorPrivacyBody: html }))}
+                placeholder="Write Operator Partner Privacy Policy..."
               />
             </>
           )}
@@ -159,20 +234,20 @@ export default function ContentPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-[#64748b]">
-                  These FAQs appear on Help & Support in the app.
+                  These FAQs appear on Help & Support in the passenger mobile app.
                 </p>
                 <button
                   type="button"
                   onClick={addFaq}
                   className="flex items-center gap-1.5 rounded-xl bg-[#eaf5dd] px-3 py-2 text-xs font-semibold text-[#4a6d00]"
                 >
-                  <Plus size={14} /> Add FAQ
+                  <Plus size={14} /> Add App FAQ
                 </button>
               </div>
 
               {form.faqs.length === 0 && (
                 <p className="rounded-xl border border-dashed border-[#e2e8f0] py-10 text-center text-sm text-[#94a3b8]">
-                  No FAQs yet. Click Add FAQ to create one.
+                  No Passenger FAQs yet. Click Add App FAQ to create one.
                 </p>
               )}
 
@@ -182,7 +257,7 @@ export default function ContentPage() {
                   className="rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-4"
                 >
                   <div className="mb-3 flex items-center justify-between">
-                    <p className="text-xs font-semibold text-[#64748b]">FAQ #{index + 1}</p>
+                    <p className="text-xs font-semibold text-[#64748b]">App FAQ #{index + 1}</p>
                     <button
                       type="button"
                       onClick={() => removeFaq(index)}
@@ -204,6 +279,62 @@ export default function ContentPage() {
                     onChange={(e) => updateFaq(index, "answer", e.target.value)}
                     rows={3}
                     placeholder="Write a clear short answer..."
+                    className="w-full rounded-xl border border-[#e2e8f0] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#4a6d00]"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === "operator-faqs" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-[#64748b]">
+                  These FAQs appear on the Operator Partner Portal website.
+                </p>
+                <button
+                  type="button"
+                  onClick={addOperatorFaq}
+                  className="flex items-center gap-1.5 rounded-xl bg-[#eaf5dd] px-3 py-2 text-xs font-semibold text-[#4a6d00]"
+                >
+                  <Plus size={14} /> Add Operator FAQ
+                </button>
+              </div>
+
+              {(form.operatorFaqs || []).length === 0 && (
+                <p className="rounded-xl border border-dashed border-[#e2e8f0] py-10 text-center text-sm text-[#94a3b8]">
+                  No Operator FAQs yet. Click Add Operator FAQ to create one.
+                </p>
+              )}
+
+              {(form.operatorFaqs || []).map((faq, index) => (
+                <div
+                  key={`op-faq-${index}`}
+                  className="rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-4"
+                >
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="text-xs font-semibold text-[#64748b]">Operator FAQ #{index + 1}</p>
+                    <button
+                      type="button"
+                      onClick={() => removeOperatorFaq(index)}
+                      className="rounded-lg p-1.5 text-red-500 hover:bg-red-50"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                  <label className="mb-1 block text-xs font-medium text-[#64748b]">Question</label>
+                  <input
+                    value={faq.question}
+                    onChange={(e) => updateOperatorFaq(index, "question", e.target.value)}
+                    placeholder="e.g. How do payout settlements work?"
+                    className="mb-3 w-full rounded-xl border border-[#e2e8f0] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#4a6d00]"
+                  />
+                  <label className="mb-1 block text-xs font-medium text-[#64748b]">Answer</label>
+                  <textarea
+                    value={faq.answer}
+                    onChange={(e) => updateOperatorFaq(index, "answer", e.target.value)}
+                    rows={3}
+                    placeholder="Write a clear short answer for operators..."
                     className="w-full rounded-xl border border-[#e2e8f0] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#4a6d00]"
                   />
                 </div>

@@ -1,7 +1,11 @@
 import axios from "axios";
 
-const ConstantsUrl = "http://localhost:3008/api/";
-const AuthUrl = "http://localhost:3008/";
+// const ConstantsUrl = "http://localhost:3008/api/";
+// const AuthUrl = "http://localhost:3008/";
+
+
+const ConstantsUrl = "https://api.alagare.net/api/";
+const AuthUrl = "https://api.alagare.net/";
 /** Same public setup name as mobile app — not a secret */
 const APP_SETUP_NAME = "alagare-mobile";
 
@@ -32,22 +36,27 @@ const getGoogleMapsKey = () => getClientKeys()?.googleMaps || "";
 /** Fetch X-API-Key (+ optional keys) from backend by app setup name */
 async function ensureApiKey() {
   if (typeof window === "undefined") return "";
-  const cached = getApiKey();
-  if (cached) return cached;
 
-  const res = await axios.get(`${AuthUrl}setup/${APP_SETUP_NAME}`, {
-    timeout: 15000,
-  });
-  if (res.data?.status !== true) {
-    throw new Error(res.data?.message || "Failed to load application setup");
+  try {
+    const res = await axios.get(`${AuthUrl}setup/${APP_SETUP_NAME}`, { timeout: 15000 });
+    if (res.data?.status !== true) throw new Error(res.data?.message || "Failed to load application setup");
+    const freshKey = res.data?.data?.apiKey;
+    if (!freshKey) throw new Error("Application API key missing from setup");
+
+    const cached = getApiKey();
+    const cachedId = cached ? String(cached).split('.')[0] : null;
+    const freshId = String(freshKey).split('.')[0];
+
+    if (!cached || cachedId !== freshId || cached !== freshKey) {
+      localStorage.setItem("apiKey", freshKey);
+      if (res.data?.data?.keys) setClientKeys(res.data.data.keys);
+    }
+    return freshKey;
+  } catch {
+    const cached = getApiKey();
+    if (cached) return cached;
+    throw new Error("Cannot reach setup endpoint");
   }
-  const apiKey = res.data?.data?.apiKey;
-  if (!apiKey) throw new Error("Application API key missing from setup");
-  localStorage.setItem("apiKey", apiKey);
-  if (res.data?.data?.keys) {
-    setClientKeys(res.data.data.keys);
-  }
-  return apiKey;
 }
 
 const authHeaders = (extra = {}) => {
