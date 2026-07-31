@@ -2,7 +2,17 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { AuthApi, Api, ensureApiKey, setClientKeys } from "@/services/service";
-import { Eye, EyeOff, Lock, Mail, Bus, Phone } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Bus,
+  Phone,
+  ArrowLeft,
+  KeyRound,
+  ShieldCheck
+} from "lucide-react";
 
 const GREEN = "#4a6d00";
 
@@ -19,10 +29,23 @@ export default function LoginPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
 
+  // Forgot password flow: 1 = email, 2 = otp, 3 = new password
+  const [mode, setMode] = useState("login");
+  const [fpStep, setFpStep] = useState(1);
+  const [fpEmail, setFpEmail] = useState("");
+  const [fpOtp, setFpOtp] = useState("");
+  const [fpToken, setFpToken] = useState("");
+  const [fpResetToken, setFpResetToken] = useState("");
+  const [fpPassword, setFpPassword] = useState("");
+  const [fpConfirm, setFpConfirm] = useState("");
+  const [fpShowPass, setFpShowPass] = useState(false);
+  const [fpTimer, setFpTimer] = useState(0);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  useEffect(() => { ensureApiKey().catch(() => {}); }, []);
+  useEffect(() => { ensureApiKey().catch(() => { }); }, []);
 
   useEffect(() => {
     if (otpTimer <= 0) return;
@@ -30,9 +53,15 @@ export default function LoginPage() {
     return () => clearInterval(t);
   }, [otpTimer]);
 
+  useEffect(() => {
+    if (fpTimer <= 0) return;
+    const t = setInterval(() => setFpTimer(v => { if (v <= 1) { clearInterval(t); return 0; } return v - 1; }), 1000);
+    return () => clearInterval(t);
+  }, [fpTimer]);
+
   const handleAdminLogin = async (e) => {
     e.preventDefault();
-    setError(""); setLoading(true);
+    setError(""); setSuccess(""); setLoading(true);
     try {
       await ensureApiKey();
       const res = await AuthApi("post", "auth/login", { email, password }, router);
@@ -47,6 +76,72 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (err) {
       setError(err?.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openForgot = () => {
+    setMode("forgot"); setFpStep(1);
+    setFpEmail(email); setFpOtp(""); setFpToken(""); setFpResetToken("");
+    setFpPassword(""); setFpConfirm(""); setFpTimer(0);
+    setError(""); setSuccess("");
+  };
+
+  const closeForgot = () => {
+    setMode("login"); setError(""); setSuccess("");
+  };
+
+  const requestResetOtp = async (resend = false) => {
+    if (!fpEmail.trim()) { setError("Enter your email"); return; }
+    setError(""); setSuccess(""); setLoading(true);
+    try {
+      await ensureApiKey();
+      const res = await AuthApi("post", resend ? "auth/resend-otp" : "auth/send-otp", { email: fpEmail.trim() }, router);
+      const token = res?.data?.token;
+      if (!token) { setError("Failed to send OTP"); return; }
+      setFpToken(token);
+      setFpOtp("");
+      setFpStep(2);
+      setFpTimer(60);
+      setSuccess(`OTP sent to ${fpEmail.trim()}`);
+    } catch (err) {
+      setError(err?.message || "Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyResetOtp = async (e) => {
+    e.preventDefault();
+    if (fpOtp.trim().length < 6) { setError("Enter the 6-digit OTP"); return; }
+    setError(""); setSuccess(""); setLoading(true);
+    try {
+      const res = await AuthApi("post", "auth/verify-otp", { otp: fpOtp.trim(), token: fpToken }, router);
+      const token = res?.data?.token;
+      if (!token) { setError("Verification failed"); return; }
+      setFpResetToken(token);
+      setFpStep(3);
+    } catch (err) {
+      setError(err?.message || "Invalid OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (fpPassword.length < 6) { setError("Password must be at least 6 characters"); return; }
+    if (fpPassword !== fpConfirm) { setError("Passwords do not match"); return; }
+    setError(""); setSuccess(""); setLoading(true);
+    try {
+      await AuthApi("post", "auth/change-password", { token: fpResetToken, password: fpPassword }, router);
+      setEmail(fpEmail.trim());
+      setPassword("");
+      setMode("login");
+      setSuccess("Password changed successfully. Please sign in.");
+    } catch (err) {
+      setError(err?.message || "Failed to change password");
     } finally {
       setLoading(false);
     }
@@ -126,107 +221,222 @@ export default function LoginPage() {
         </div>
 
         <div className="w-full max-w-md">
-          <div className="mb-6 flex rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-1">
-            <button onClick={() => { setTab("admin"); setError(""); setOtpSent(false); }}
-              className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${tab === "admin" ? "bg-white shadow-sm text-[#1e293b]" : "text-[#64748b] hover:text-[#1e293b]"}`}>
-              Admin Login
-            </button>
-            <button onClick={() => { setTab("operator"); setError(""); setOtpSent(false); }}
-              className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${tab === "operator" ? "bg-white shadow-sm text-[#1e293b]" : "text-[#64748b] hover:text-[#1e293b]"}`}>
-              Operator Login
-            </button>
-          </div>
-
-          {tab === "admin" ? (
+          {mode === "forgot" ? (
             <>
+              <button type="button" onClick={closeForgot}
+                className="mb-6 flex items-center gap-1.5 text-sm font-medium text-[#64748b] hover:text-[#1e293b]">
+                <ArrowLeft size={16} /> Back to login
+              </button>
+
               <div className="mb-6">
-                <h1 className="text-2xl font-bold text-[#1e293b]">Welcome back</h1>
-                <p className="mt-1 text-sm text-[#64748b]">Sign in to your admin account</p>
+                <h1 className="text-2xl font-bold text-[#1e293b]">Forgot password</h1>
+                <p className="mt-1 text-sm text-[#64748b]">
+                  {fpStep === 1 && "Enter your email and we'll send you a verification code"}
+                  {fpStep === 2 && `Enter the 6-digit code sent to ${fpEmail}`}
+                  {fpStep === 3 && "Choose a new password for your account"}
+                </p>
               </div>
-              <form onSubmit={handleAdminLogin} className="space-y-5">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-[#374151]">Email</label>
-                  <div className="relative">
-                    <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
-                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@alagare.com"
-                      className="w-full rounded-xl border border-[#e2e8f0] bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20" />
+
+              <div className="mb-6 flex items-center gap-2">
+                {[1, 2, 3].map(s => (
+                  <div key={s} className="h-1.5 flex-1 rounded-full transition-all"
+                    style={{ backgroundColor: fpStep >= s ? GREEN : "#e2e8f0" }} />
+                ))}
+              </div>
+
+              {fpStep === 1 && (
+                <form onSubmit={(e) => { e.preventDefault(); requestResetOtp(false); }} className="space-y-5">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-[#374151]">Email</label>
+                    <div className="relative">
+                      <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
+                      <input type="email" value={fpEmail} onChange={e => setFpEmail(e.target.value)} placeholder="admin@alagare.com"
+                        className="w-full rounded-xl border border-[#e2e8f0] bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20" />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-[#374151]">Password</label>
-                  <div className="relative">
-                    <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
-                    <input type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••"
-                      className="w-full rounded-xl border border-[#e2e8f0] bg-white py-3 pl-10 pr-11 text-sm outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20" />
-                    <button type="button" onClick={() => setShowPass(!showPass)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]">
-                      {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
+                  {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+                  <button type="submit" disabled={loading}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                    style={{ backgroundColor: GREEN }}>
+                    {loading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <><Mail size={16} /> Send Code</>}
+                  </button>
+                </form>
+              )}
+
+              {fpStep === 2 && (
+                <form onSubmit={handleVerifyResetOtp} className="space-y-5">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-[#374151]">Verification Code</label>
+                    <div className="relative">
+                      <KeyRound size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
+                      <input type="text" inputMode="numeric" maxLength={6} value={fpOtp}
+                        onChange={e => setFpOtp(e.target.value.replace(/\D/g, ""))} placeholder="000000"
+                        className="w-full rounded-xl border border-[#e2e8f0] bg-white py-3 pl-10 pr-4 text-center text-lg font-bold tracking-[0.4em] outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20" />
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <p className="text-xs text-[#94a3b8]">Code expires in 5 minutes</p>
+                      <button type="button" onClick={() => requestResetOtp(true)} disabled={fpTimer > 0 || loading}
+                        className="text-xs font-medium disabled:text-[#94a3b8]"
+                        style={{ color: fpTimer > 0 ? undefined : GREEN }}>
+                        {fpTimer > 0 ? `Resend in ${fpTimer}s` : "Resend code"}
+                      </button>
+                    </div>
                   </div>
-                </div>
-                {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
-                <button type="submit" disabled={loading}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-                  style={{ backgroundColor: GREEN }}>
-                  {loading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <><Bus size={16} /> Sign In</>}
-                </button>
-              </form>
+                  {success && <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">{success}</p>}
+                  {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+                  <button type="submit" disabled={loading || fpOtp.length < 6}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                    style={{ backgroundColor: GREEN }}>
+                    {loading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <><ShieldCheck size={16} /> Verify Code</>}
+                  </button>
+                </form>
+              )}
+
+              {fpStep === 3 && (
+                <form onSubmit={handleResetPassword} className="space-y-5">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-[#374151]">New Password</label>
+                    <div className="relative">
+                      <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
+                      <input type={fpShowPass ? "text" : "password"} value={fpPassword} onChange={e => setFpPassword(e.target.value)}
+                        placeholder="At least 6 characters"
+                        className="w-full rounded-xl border border-[#e2e8f0] bg-white py-3 pl-10 pr-11 text-sm outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20" />
+                      <button type="button" onClick={() => setFpShowPass(!fpShowPass)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]">
+                        {fpShowPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-[#374151]">Confirm Password</label>
+                    <div className="relative">
+                      <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
+                      <input type={fpShowPass ? "text" : "password"} value={fpConfirm} onChange={e => setFpConfirm(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full rounded-xl border border-[#e2e8f0] bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20" />
+                    </div>
+                  </div>
+                  {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+                  <button type="submit" disabled={loading}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                    style={{ backgroundColor: GREEN }}>
+                    {loading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <><Lock size={16} /> Reset Password</>}
+                  </button>
+                </form>
+              )}
             </>
           ) : (
             <>
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold text-[#1e293b]">Operator Login</h1>
-                <p className="mt-1 text-sm text-[#64748b]">Sign in with your registered phone number</p>
+              <div className="mb-6 flex rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-1">
+                <button onClick={() => { setTab("admin"); setError(""); setSuccess(""); setOtpSent(false); }}
+                  className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${tab === "admin" ? "bg-white shadow-sm text-[#1e293b]" : "text-[#64748b] hover:text-[#1e293b]"}`}>
+                  Admin Login
+                </button>
+                <button onClick={() => { setTab("operator"); setError(""); setSuccess(""); setOtpSent(false); }}
+                  className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-all ${tab === "operator" ? "bg-white shadow-sm text-[#1e293b]" : "text-[#64748b] hover:text-[#1e293b]"}`}>
+                  Operator Login
+                </button>
               </div>
-              <form onSubmit={handleOperatorLogin} className="space-y-4">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-[#374151]">Phone Number</label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
-                      <input type="tel" value={phone} onChange={e => { setPhone(e.target.value); setOtpSent(false); setOtp(""); }}
-                        placeholder="+1 234 567 8900" disabled={otpSent}
-                        className="w-full rounded-xl border border-[#e2e8f0] bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20 disabled:bg-zinc-50" />
+
+              {tab === "admin" ? (
+                <>
+                  <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-[#1e293b]">Welcome back</h1>
+                    <p className="mt-1 text-sm text-[#64748b]">Sign in to your admin account</p>
+                  </div>
+                  <form onSubmit={handleAdminLogin} className="space-y-5">
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-[#374151]">Email</label>
+                      <div className="relative">
+                        <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
+                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@alagare.com"
+                          className="w-full rounded-xl border border-[#e2e8f0] bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20" />
+                      </div>
                     </div>
-                    {!otpSent && (
-                      <button type="button" onClick={handleSendOtp} disabled={loading}
-                        className="rounded-xl px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-[#374151]">Password</label>
+                      <div className="relative">
+                        <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
+                        <input type={showPass ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••"
+                          className="w-full rounded-xl border border-[#e2e8f0] bg-white py-3 pl-10 pr-11 text-sm outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20" />
+                        <button type="button" onClick={() => setShowPass(!showPass)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]">
+                          {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                      <div className="mt-2 flex justify-end">
+                        <button type="button" onClick={openForgot}
+                          className="text-xs font-medium hover:underline" style={{ color: GREEN }}>
+                          Forgot password?
+                        </button>
+                      </div>
+                    </div>
+                    {success && <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">{success}</p>}
+                    {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+                    <button type="submit" disabled={loading}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+                      style={{ backgroundColor: GREEN }}>
+                      {loading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <><Bus size={16} /> Sign In</>}
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-[#1e293b]">Operator Login</h1>
+                    <p className="mt-1 text-sm text-[#64748b]">Sign in with your registered phone number</p>
+                  </div>
+                  <form onSubmit={handleOperatorLogin} className="space-y-4">
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-[#374151]">Phone Number</label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
+                          <input type="tel" value={phone} onChange={e => { setPhone(e.target.value); setOtpSent(false); setOtp(""); }}
+                            placeholder="+1 234 567 8900" disabled={otpSent}
+                            className="w-full rounded-xl border border-[#e2e8f0] bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20 disabled:bg-zinc-50" />
+                        </div>
+                        {!otpSent && (
+                          <button type="button" onClick={handleSendOtp} disabled={loading}
+                            className="rounded-xl px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
+                            style={{ backgroundColor: GREEN }}>
+                            {loading ? "..." : "Send OTP"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {otpSent && (
+                      <div className="rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-4">
+                        <p className="mb-3 text-sm text-[#64748b]">Enter the 4-digit OTP sent to <strong>{phone}</strong></p>
+                        <div className="flex items-center gap-3">
+                          <input type="text" maxLength={4} value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ""))}
+                            placeholder="0000"
+                            className="w-24 rounded-xl border border-[#e2e8f0] bg-white px-4 py-3 text-center text-lg font-bold tracking-widest outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20" />
+                          <button type="button" onClick={handleSendOtp} disabled={otpTimer > 0 || loading}
+                            className="ml-auto text-xs font-medium disabled:text-[#94a3b8]"
+                            style={{ color: otpTimer > 0 ? undefined : GREEN }}>
+                            {otpTimer > 0 ? `Resend in ${otpTimer}s` : "Resend OTP"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+
+                    {otpSent && (
+                      <button type="submit" disabled={loading || otp.length < 4}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
                         style={{ backgroundColor: GREEN }}>
-                        {loading ? "..." : "Send OTP"}
+                        {loading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <><Phone size={16} /> Login with OTP</>}
                       </button>
                     )}
-                  </div>
-                </div>
-
-                {otpSent && (
-                  <div className="rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-4">
-                    <p className="mb-3 text-sm text-[#64748b]">Enter the 4-digit OTP sent to <strong>{phone}</strong></p>
-                    <div className="flex items-center gap-3">
-                      <input type="text" maxLength={4} value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ""))}
-                        placeholder="0000"
-                        className="w-24 rounded-xl border border-[#e2e8f0] bg-white px-4 py-3 text-center text-lg font-bold tracking-widest outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20" />
-                      <button type="button" onClick={handleSendOtp} disabled={otpTimer > 0 || loading}
-                        className="ml-auto text-xs font-medium disabled:text-[#94a3b8]"
-                        style={{ color: otpTimer > 0 ? undefined : GREEN }}>
-                        {otpTimer > 0 ? `Resend in ${otpTimer}s` : "Resend OTP"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
-
-                {otpSent && (
-                  <button type="submit" disabled={loading || otp.length < 4}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-                    style={{ backgroundColor: GREEN }}>
-                    {loading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <><Phone size={16} /> Login with OTP</>}
-                  </button>
-                )}
-              </form>
-              <p className="mt-4 text-center text-xs text-[#94a3b8]">
-                Use the phone number you registered with. OTP: 7777 (demo)
-              </p>
+                  </form>
+                  <p className="mt-4 text-center text-xs text-[#94a3b8]">
+                    Use the phone number you registered with. OTP: 7777 (demo)
+                  </p>
+                </>
+              )}
             </>
           )}
         </div>

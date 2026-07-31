@@ -1,11 +1,10 @@
 import axios from "axios";
 
-const ConstantsUrl = "http://localhost:3008/api/";
-const AuthUrl = "http://localhost:3008/";
+// const ConstantsUrl = "http://localhost:3008/api/";
+// const AuthUrl = "http://localhost:3008/";
 
-
-// const ConstantsUrl = "https://api.alagare.net/api/";
-// const AuthUrl = "https://api.alagare.net/";
+const ConstantsUrl = "https://api.alagare.net/api/";
+const AuthUrl = "https://api.alagare.net/";
 /** Same public setup name as mobile app — not a secret */
 const APP_SETUP_NAME = "alagare-mobile";
 
