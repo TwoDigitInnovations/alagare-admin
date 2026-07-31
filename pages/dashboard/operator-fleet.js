@@ -124,7 +124,7 @@ function readUser() {
 const ROUTE_EMPTY = {
   from: "", to: "", departure: "", arrival: "", duration: "",
   price: "", seats: "", busType: "", status: "active", isExpress: true,
-  departureStation: "", arrivalStation: "",
+  departureStation: "", arrivalStation: "", ladiesSeats: "0-1, 2-0, 5-2, 5-3, 7-1",
 };
 
 const BUS_TYPE_EMPTY = { name: "", rowCount: "10", seatsPerSide: "2", totalSeats: "40" };
@@ -475,6 +475,10 @@ export default function OperatorFleet() {
             <Field label="Departure Station"><Input placeholder="Berlin Coach Station" value={routeForm.departureStation} onChange={e => setRouteForm(p => ({ ...p, departureStation: e.target.value }))} /></Field>
             <Field label="Arrival Station"><Input placeholder="Munich Terminal" value={routeForm.arrivalStation} onChange={e => setRouteForm(p => ({ ...p, arrivalStation: e.target.value }))} /></Field>
           </div>
+
+          <Field label="Ladies Reserved Seats (e.g. 0-1, 2-0, 5-2)">
+            <Input placeholder="e.g. 0-1, 2-0, 5-2, 5-3, 7-1" value={routeForm.ladiesSeats || ""} onChange={e => setRouteForm(p => ({ ...p, ladiesSeats: e.target.value }))} />
+          </Field>
 
           <div className="flex gap-4">
             <label className="flex items-center gap-2 text-sm font-medium text-[#374151] cursor-pointer">
