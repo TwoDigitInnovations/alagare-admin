@@ -22,6 +22,7 @@ import {
   MessageSquare,
   UserCircle,
   PhoneCall,
+  Wallet,
 } from "lucide-react";
 
 const NAV = [
@@ -31,6 +32,7 @@ const NAV = [
   { href: "/dashboard/routes", label: "Bus Routes", icon: Bus },
   { href: "/dashboard/bookings", label: "Bookings", icon: Ticket },
   { href: "/dashboard/reports", label: "Reports", icon: MessageSquare },
+  { href: "/dashboard/settlements", label: "Payout Settlements", icon: Wallet },
   { href: "/dashboard/cities", label: "Cities", icon: MapPin },
   { href: "/dashboard/users", label: "Users", icon: Users },
   { href: "/dashboard/operator-applications", label: "Applications", icon: FileText },

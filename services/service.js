@@ -6,7 +6,7 @@ import axios from "axios";
 
 const ConstantsUrl = "https://api.alagare.net/api/";
 const AuthUrl = "https://api.alagare.net/";
-/** Same public setup name as mobile app — not a secret */
+
 const APP_SETUP_NAME = "alagare-mobile";
 
 const getToken = () =>
