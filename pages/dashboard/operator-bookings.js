@@ -9,6 +9,31 @@ import {
 
 const GREEN = "#4a6d00";
 
+const formatSeatKey = (key) => {
+  if (!key) return "";
+  const [r, c] = key.split('-');
+  if (c === 'middle') return `${Number(r) + 1}M`;
+  return `${Number(r) + 1}${String.fromCharCode(65 + Number(c))}`;
+};
+
+const isPastDeparture = (dateStr, timeStr) => {
+  if (!dateStr) return false;
+  try {
+    const d = new Date(dateStr);
+    if (timeStr) {
+      const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      if (match) {
+        let [_, h, m, ampm] = match;
+        h = parseInt(h, 10);
+        if (ampm.toUpperCase() === 'PM' && h < 12) h += 12;
+        if (ampm.toUpperCase() === 'AM' && h === 12) h = 0;
+        d.setHours(h, parseInt(m, 10), 0, 0);
+      }
+    }
+    return new Date() > d;
+  } catch { return false; }
+};
+
 function readUser() {
   if (typeof window === "undefined") return null;
   try { return JSON.parse(localStorage.getItem("userDetail") || "null"); } catch { return null; }
@@ -279,7 +304,7 @@ export default function OperatorBookings() {
                 ["Operator", view.operator || user.fullname],
                 ["Travel Date", view.date || "N/A"],
                 ["Total Seats", view.seats],
-                ["Seat Numbers", view.seatKeys && view.seatKeys.length > 0 ? view.seatKeys.join(", ") : "Auto Assigned"],
+                ["Seat Numbers", view.seatKeys && view.seatKeys.length > 0 ? view.seatKeys.map(formatSeatKey).join(", ") : "Auto Assigned"],
                 ["Total Fare", `€${view.amount}`],
                 ["Booking Date", view.createdAt ? new Date(view.createdAt).toLocaleDateString() : "N/A"],
               ].map(([k, v]) => (
@@ -291,7 +316,7 @@ export default function OperatorBookings() {
             </div>
 
             <div className="flex gap-3 pt-2">
-              {view.status !== "cancelled" && (
+              {view.status !== "cancelled" && !isPastDeparture(view.date, view.departureTime) && (
                 <button onClick={() => updateStatus(view.id, "cancelled")} disabled={actionLoading}
                   className="flex-1 rounded-xl border border-red-200 bg-red-50 py-2.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50">
                   Cancel Booking

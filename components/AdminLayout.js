@@ -55,6 +55,7 @@ export default function AdminLayout({ children, title }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [adminUser, setAdminUser] = useState(null);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined" && !localStorage.getItem("adminAuth")) {
@@ -172,10 +173,34 @@ export default function AdminLayout({ children, title }) {
             <h1 className="text-base font-bold text-[#1e293b] sm:text-lg">{title}</h1>
           </div>
           <div className="flex items-center gap-3">
-            <button className="relative rounded-lg border border-[#e2e8f0] p-2 hover:bg-[#f4f6f8]">
-              <Bell size={18} className="text-[#4a6d00]" />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#f26522]" />
-            </button>
+            <div className="relative">
+              <button 
+                className="relative rounded-lg border border-[#e2e8f0] p-2 hover:bg-[#f4f6f8]"
+                onClick={() => setShowNotifications(!showNotifications)}
+                onBlur={() => setTimeout(() => setShowNotifications(false), 200)}
+              >
+                <Bell size={18} className="text-[#4a6d00]" />
+              </button>
+              
+              {showNotifications && (
+                <div className="absolute right-0 top-full mt-3 w-80 rounded-2xl border border-[#e2e8f0] bg-white shadow-2xl z-50 overflow-hidden transition-all">
+                  <div className="flex items-center justify-between border-b border-[#e2e8f0] bg-[#f8fafc] px-5 py-4">
+                    <h3 className="text-sm font-bold text-[#1e293b]">Notifications</h3>
+                  </div>
+                  <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
+                    <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-50 border border-slate-100">
+                      <Bell size={24} className="text-[#94a3b8]" />
+                    </div>
+                    <p className="text-sm font-semibold text-[#334155]">
+                      No notifications found right now
+                    </p>
+                    <p className="mt-1.5 text-xs text-[#94a3b8]">
+                      When you get notifications, they'll show up here.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
             <Link
               href="/dashboard/profile"
               className="hidden items-center gap-2 rounded-xl px-1 py-0.5 hover:bg-[#f4f6f8] sm:flex"
