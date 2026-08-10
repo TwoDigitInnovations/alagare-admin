@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { Api } from "@/services/service";
+import { Api, ApiFormData } from "@/services/service";
 import { toastSuccess, toastError } from "@/utils/swal";
 import {
   User, ArrowLeft, Bus, Upload, Building2, Phone, Mail, FileText
@@ -25,6 +25,7 @@ export default function OperatorProfile() {
   const [companyName, setCompanyName] = useState("");
   const [description, setDescription] = useState("");
   const [logo, setLogo] = useState("");
+  const [logoFile, setLogoFile] = useState(null);
 
   useEffect(() => {
     const u = readUser();
@@ -59,14 +60,8 @@ export default function OperatorProfile() {
       toastError("Image size must be less than 2MB");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const dataUrl = evt.target?.result;
-      if (typeof dataUrl === "string") {
-        setLogo(dataUrl);
-      }
-    };
-    reader.readAsDataURL(file);
+    setLogoFile(file);
+    setLogo(URL.createObjectURL(file));
   };
 
   const saveProfile = async (e) => {
@@ -78,26 +73,29 @@ export default function OperatorProfile() {
 
     setSaving(true);
     try {
-      const payload = {
-        fullname: fullname.trim(),
-        phone: phone.trim(),
-        companyName: companyName.trim(),
-        description: description.trim(),
-        logo: logo.trim(),
-      };
-      const res = await Api("put", "operator/profile", payload, router);
+      const fd = new FormData();
+      fd.append("fullname", fullname.trim());
+      fd.append("phone", phone.trim());
+      fd.append("companyName", companyName.trim());
+      fd.append("description", description.trim());
+      if (logoFile) {
+        fd.append("logo", logoFile);
+      }
+
+      const res = await ApiFormData("put", "operator/profile", fd, router);
       toastSuccess("Profile updated successfully!");
 
       const currentUser = readUser() || {};
       const updatedUser = {
         ...currentUser,
-        fullname: payload.fullname,
-        phone: payload.phone,
+        fullname: fullname.trim(),
+        phone: phone.trim(),
       };
       localStorage.setItem("userDetail", JSON.stringify(updatedUser));
 
       if (res?.data?.profile) {
         setLogo(res.data.profile.logo || "");
+        setLogoFile(null);
       }
     } catch (err) {
       toastError(err?.message || "Failed to update profile");

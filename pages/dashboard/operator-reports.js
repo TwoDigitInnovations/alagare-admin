@@ -36,7 +36,7 @@ export default function OperatorReportsPage() {
 
   const fetchReports = () => {
     setLoading(true);
-    Api("get", "operator/reports", null, router)
+    Api("get", `operator/reports?time=${timeFilter}`, null, router)
       .then((res) => {
         const payload = res?.data || res;
         if (payload?.summary) {
@@ -60,7 +60,7 @@ export default function OperatorReportsPage() {
     }
     setUser(u);
     fetchReports();
-  }, [router]);
+  }, [router, timeFilter]);
 
   const handleExportCSV = () => {
     if (data.routePerformance.length === 0) {
@@ -157,7 +157,7 @@ export default function OperatorReportsPage() {
             </div>
             <p className="mt-3 text-2xl font-black text-[#1e293b]">{data.summary.totalBookings}</p>
             <p className="mt-1 text-xs text-[#64748b]">
-              <span className="font-bold text-emerald-600">{data.summary.confirmedCount} confirmed</span> • {data.summary.pendingCount} pending
+              <span className="font-bold text-emerald-600">{data.summary.confirmedCount} confirmed</span>
             </p>
           </div>
 

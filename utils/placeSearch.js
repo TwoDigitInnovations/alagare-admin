@@ -145,12 +145,13 @@ const formatNominatim = (item) => {
   if (!name) return null;
 
   const parentCity =
-    [addr.city, addr.town, addr.municipality, addr.state_district, addr.state]
+    [addr.city, addr.town, addr.municipality, addr.state_district]
       .map((v) => (v || '').trim())
       .find((v) => v && v.toLowerCase() !== name.toLowerCase()) || '';
 
+  const state = addr.state || '';
   const country = addr.country || '';
-  const parts = [name, parentCity, country].filter(
+  const parts = [name, parentCity, state, country].filter(
     (v, i, arr) => v && arr.findIndex((x) => x.toLowerCase() === v.toLowerCase()) === i,
   );
 
@@ -159,6 +160,7 @@ const formatNominatim = (item) => {
     name,
     city: name,
     parentCity,
+    state,
     country,
     label: parts.join(', '),
     type,

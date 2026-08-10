@@ -66,7 +66,7 @@ function CitySearch({ label, required, value, onChange, router }) {
       setResults(res?.data?.cities || []);
     } catch {
       const local = await searchBusPlaces(q);
-      setResults(local.map(name => ({ name, country: "" })));
+      setResults(local);
     } finally {
       setSearching(false);
     }
@@ -116,7 +116,13 @@ function CitySearch({ label, required, value, onChange, router }) {
                 <MapPin size={13} className="mt-0.5 flex-shrink-0 text-[#4a6d00]" />
                 <div>
                   <p className="text-sm font-medium text-[#1e293b]">{r.name}</p>
-                  {r.country && <p className="text-xs text-[#94a3b8]">{r.country}</p>}
+                  {r.label ? (
+                    <p className="text-xs text-[#94a3b8]">
+                      {r.label.split(', ').slice(1).join(', ') || r.country}
+                    </p>
+                  ) : r.country ? (
+                    <p className="text-xs text-[#94a3b8]">{r.country}</p>
+                  ) : null}
                 </div>
               </button>
             ))
@@ -163,8 +169,79 @@ const Field = ({ label, required, error, children }) => (
 
 const Input = ({ ...props }) => (
   <input {...props}
-    className="w-full rounded-xl border border-[#e2e8f0] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20" />
+    className={`w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition-all ${props.disabled ? 'bg-[#f1f5f9] border-[#cbd5e1] text-[#94a3b8] cursor-not-allowed' : 'bg-white border-[#e2e8f0] focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20'}`} />
 );
+
+function SeatMapSelector({ rowCount, seatsPerSide, value = "", onChange }) {
+  const selectedSeats = value.split(',').map(s => s.trim()).filter(Boolean);
+
+  const toggleSeat = (id) => {
+    let next;
+    if (selectedSeats.includes(id)) {
+      next = selectedSeats.filter(s => s !== id);
+    } else {
+      next = [...selectedSeats, id];
+    }
+    onChange(next.join(", "));
+  };
+
+  const rows = parseInt(rowCount, 10) || 10;
+  const cols = parseInt(seatsPerSide, 10) || 2;
+
+  const layout = [];
+  for (let r = 0; r < rows; r++) {
+    const isLastRow = r === rows - 1;
+    const rowSeats = [];
+    for (let c = 0; c < cols; c++) {
+      rowSeats.push({ id: `${r}-${c}`, label: `${r + 1}${String.fromCharCode(65 + c)}` });
+    }
+    if (isLastRow) {
+      rowSeats.push({ id: `${r}-middle`, label: `${r + 1}M` });
+    } else {
+      rowSeats.push(null); // Aisle
+    }
+    for (let c = 0; c < cols; c++) {
+      rowSeats.push({ id: `${r}-${cols + c}`, label: `${r + 1}${String.fromCharCode(65 + cols + c)}` });
+    }
+    layout.push(rowSeats);
+  }
+
+  return (
+    <div className="rounded-xl border border-[#e2e8f0] bg-[#f8fafc] p-4 flex flex-col items-center overflow-x-auto w-full">
+      <div className="mb-4 flex gap-4 text-xs font-semibold text-[#64748b]">
+        <div className="flex items-center gap-1.5"><div className="w-4 h-4 rounded bg-[#f1f5f9] border border-[#cbd5e1]"></div> Regular Seat</div>
+        <div className="flex items-center gap-1.5"><div className="w-4 h-4 rounded bg-[#fce7f3] border border-[#f472b6]"></div> Ladies Reserved</div>
+      </div>
+      <div className="bg-white p-4 rounded-xl border border-[#e2e8f0] shadow-sm inline-block min-w-max">
+        <div className="w-full flex justify-end mb-6 border-b-2 border-dashed border-[#e2e8f0] pb-2 text-xs font-bold text-[#94a3b8]">STEERING</div>
+        <div className="flex flex-col gap-2">
+          {layout.map((row, i) => (
+            <div key={i} className="flex gap-2 justify-center">
+              {row.map((seat, j) => {
+                if (!seat) return <div key={j} className="w-8 h-8 md:w-10 md:h-10 shrink-0"></div>;
+                const isSelected = selectedSeats.includes(seat.id);
+                return (
+                  <button
+                    key={seat.id}
+                    type="button"
+                    onClick={() => toggleSeat(seat.id)}
+                    className={`w-8 h-8 md:w-10 md:h-10 shrink-0 rounded-md border flex items-center justify-center text-[10px] md:text-xs font-bold transition-all hover:opacity-80 ${
+                      isSelected 
+                        ? 'bg-[#fce7f3] border-[#f472b6] text-[#db2777] shadow-sm' 
+                        : 'bg-[#f1f5f9] border-[#cbd5e1] text-[#64748b] hover:border-[#94a3b8]'
+                    }`}
+                  >
+                    {seat.label}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Modal({ open, onClose, title, size = "max-w-2xl", children }) {
   if (!open) return null;
@@ -242,9 +319,11 @@ export default function OperatorFleet() {
     } else if (typeof r.facilities === 'string' && r.facilities.trim()) {
       facList = r.facilities.split(',').map((s) => s.trim()).filter(Boolean);
     }
+    const bt = busTypes.find(b => b.name === r.busType);
+    const correctSeats = bt ? String(bt.totalSeats) : String(r.seats);
     setRouteForm({
       from: r.from, to: r.to, departure: r.departure, arrival: r.arrival,
-      duration: r.duration, price: String(r.price), seats: String(r.seats),
+      duration: r.duration, price: String(r.price), seats: correctSeats,
       busType: r.busType, status: r.status, isExpress: r.isExpress,
       departureStation: r.departureStation || "", arrivalStation: r.arrivalStation || "",
       ladiesSeats: Array.isArray(r.ladiesSeats) ? r.ladiesSeats.join(', ') : (r.ladiesSeats || ""),
@@ -512,9 +591,15 @@ export default function OperatorFleet() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Field label="Base Fare (€)" required><Input type="number" min="0" step="0.5" placeholder="25" value={routeForm.price} onChange={e => setRouteForm(p => ({ ...p, price: e.target.value }))} required /></Field>
-            <Field label="Total Seats" required><Input type="number" min="1" placeholder="40" value={routeForm.seats} onChange={e => setRouteForm(p => ({ ...p, seats: e.target.value }))} required /></Field>
+            <Field label="Total Seats" required>
+              <Input type="number" min="1" placeholder="40" value={routeForm.seats} readOnly disabled />
+            </Field>
             <Field label="Bus Type" required>
-              <select value={routeForm.busType} onChange={e => setRouteForm(p => ({ ...p, busType: e.target.value }))} required
+              <select value={routeForm.busType} onChange={e => {
+                  const type = e.target.value;
+                  const bt = busTypes.find(b => b.name === type);
+                  setRouteForm(p => ({ ...p, busType: type, seats: bt ? bt.totalSeats : p.seats, ladiesSeats: "" }));
+                }} required
                 className="w-full rounded-xl border border-[#e2e8f0] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#4a6d00]">
                 <option value="">Select bus type</option>
                 {busTypes.map(bt => <option key={bt._id} value={bt.name}>{bt.name}</option>)}
@@ -527,8 +612,22 @@ export default function OperatorFleet() {
             <Field label="Arrival Station Name"><Input placeholder="e.g. Munich Central Terminal" value={routeForm.arrivalStation} onChange={e => setRouteForm(p => ({ ...p, arrivalStation: e.target.value }))} /></Field>
           </div>
 
-          <Field label="Ladies Reserved Seats (e.g. 0-1, 2-0, 5-2)">
-            <Input placeholder="e.g. 0-1, 2-0, 5-2, 5-3, 7-1" value={routeForm.ladiesSeats || ""} onChange={e => setRouteForm(p => ({ ...p, ladiesSeats: e.target.value }))} />
+          <Field label="Ladies Reserved Seats (Click to select/unselect)">
+            {routeForm.busType ? (() => {
+              const bt = busTypes.find(b => b.name === routeForm.busType) || { rowCount: 10, seatsPerSide: 2 };
+              return (
+                <SeatMapSelector 
+                  rowCount={bt.rowCount} 
+                  seatsPerSide={bt.seatsPerSide} 
+                  value={routeForm.ladiesSeats || ""} 
+                  onChange={v => setRouteForm(p => ({ ...p, ladiesSeats: v }))} 
+                />
+              );
+            })() : (
+              <div className="rounded-xl border border-dashed border-[#cbd5e1] bg-[#f8fafc] p-6 text-center text-sm text-[#94a3b8]">
+                Please select a Bus Type first to view the seat map.
+              </div>
+            )}
           </Field>
 
           {/* Interactive Bus Facilities Selector Grid */}
@@ -658,7 +757,11 @@ export default function OperatorFleet() {
           <Field label="Bus Type Name" required><Input placeholder="e.g. Volvo AC Sleeper" value={btForm.name} onChange={e => setBtForm(p => ({ ...p, name: e.target.value }))} required /></Field>
           <div className="grid grid-cols-3 gap-3">
             <Field label="Rows"><Input type="number" min="1" value={btForm.rowCount} onChange={e => setBtForm(p => ({ ...p, rowCount: e.target.value }))} /></Field>
-            <Field label="Seats/Side"><Input type="number" min="1" value={btForm.seatsPerSide} onChange={e => setBtForm(p => ({ ...p, seatsPerSide: e.target.value }))} /></Field>
+            <Field label="Seats/Side (Max 3)"><Input type="number" min="1" max="3" value={btForm.seatsPerSide} onChange={e => {
+              let val = e.target.value;
+              if (parseInt(val) > 3) val = "3";
+              setBtForm(p => ({ ...p, seatsPerSide: val }));
+            }} required /></Field>
             <Field label="Total Seats"><Input type="number" min="1" value={btForm.totalSeats} onChange={e => setBtForm(p => ({ ...p, totalSeats: e.target.value }))} /></Field>
           </div>
           <div className="flex gap-3 pt-2">
