@@ -53,6 +53,8 @@ async function ensureApiKey(forceRefresh = false) {
   return cached || "";
 }
 
+// code
+
 const authHeaders = (extra = {}) => {
   const headers = { ...extra };
   const token = getToken();
