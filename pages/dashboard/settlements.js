@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import AdminLayout from "@/components/AdminLayout";
+import Modal from "@/components/Modal";
 import { Api } from "@/services/service";
 import { toastSuccess, toastError, swalConfirm } from "@/utils/swal";
 import {
-  Wallet, ShieldCheck, Clock, CheckCircle2, AlertTriangle, RefreshCw, Search, DollarSign, Filter
+  Wallet, ShieldCheck, Clock, CheckCircle2, AlertTriangle, RefreshCw, Search, DollarSign, Filter, Eye, Building, CreditCard
 } from "lucide-react";
 
 export default function AdminSettlementsPage() {
@@ -13,6 +14,7 @@ export default function AdminSettlementsPage() {
   const [settlements, setSettlements] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSettlement, setSelectedSettlement] = useState(null);
 
   const fetchSettlements = () => {
     setLoading(true);
@@ -40,6 +42,7 @@ export default function AdminSettlementsPage() {
       const res = await Api("put", `admin/settlements/${id}/status`, { status: newStatus }, router);
       if (res?.status === true || res?.settlement || res?.message) {
         toastSuccess(`Settlement marked as ${newStatus}!`);
+        setSelectedSettlement(null);
         fetchSettlements();
       } else {
         toastError(res?.message || "Failed to update status");
@@ -58,7 +61,8 @@ export default function AdminSettlementsPage() {
 
   const totalRequested = settlements.reduce((acc, s) => acc + (s.requestedAmount || s.amount || 0), 0);
   const pendingCount = settlements.filter((s) => s.status === "pending").length;
-  const settledTotal = settlements.filter((s) => s.status === "settled").reduce((acc, s) => acc + (s.amount || 0), 0);
+  const settledTotal = settlements.filter((s) => s.status === "settled").reduce((acc, s) => acc + (s.netPayout ?? s.requestedAmount ?? s.amount ?? 0), 0);
+  const settledCount = settlements.filter((s) => s.status === "settled").length;
   const suspendedCount = settlements.filter((s) => s.status === "suspended").length;
 
   return (
@@ -105,12 +109,12 @@ export default function AdminSettlementsPage() {
           <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-2xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[#64748b] uppercase tracking-wide">Total Settled</span>
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#eaf5dd] text-[#4a6d00]">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
                 <CheckCircle2 size={18} />
               </div>
             </div>
-            <p className="mt-3 text-2xl font-black text-[#4a6d00]">€{settledTotal.toLocaleString("en-US")}</p>
-            <p className="mt-1 text-xs text-[#64748b]">Completed disbursements</p>
+            <p className="mt-3 text-2xl font-black text-emerald-600">€{settledTotal.toLocaleString("en-US")}</p>
+            <p className="mt-1 text-xs text-[#64748b]">{settledCount} completed disbursement{settledCount === 1 ? '' : 's'}</p>
           </div>
 
           <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-2xs">
@@ -161,22 +165,22 @@ export default function AdminSettlementsPage() {
           ) : filtered.length === 0 ? (
             <div className="py-16 text-center text-xs text-[#94a3b8]">No settlement requests found.</div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+            <div className="overflow-x-auto rounded-xl border border-[#f1f5f9]">
+              <table className="min-w-full divide-y divide-[#f1f5f9] text-xs">
                 <thead>
-                  <tr className="border-b border-[#f1f5f9] text-[#94a3b8] font-semibold">
-                    <th className="pb-3">Settlement ID</th>
-                    <th className="pb-3">Operator</th>
-                    <th className="pb-3">Date</th>
-                    <th className="pb-3">Requested</th>
-                    <th className="pb-3">Commission</th>
-                    <th className="pb-3">Net Payout</th>
-                    <th className="pb-3">Bank Details</th>
-                    <th className="pb-3">Status</th>
-                    <th className="pb-3 text-right">Admin Actions</th>
+                  <tr className="bg-[#f8fafc] text-[#64748b] font-bold">
+                    <th className="px-4 py-3.5 text-left whitespace-nowrap">Settlement ID</th>
+                    <th className="px-4 py-3.5 text-left whitespace-nowrap">Operator</th>
+                    <th className="px-4 py-3.5 text-left whitespace-nowrap">Date</th>
+                    <th className="px-4 py-3.5 text-right whitespace-nowrap">Requested</th>
+                    <th className="px-4 py-3.5 text-right whitespace-nowrap">Commission</th>
+                    <th className="px-4 py-3.5 text-right whitespace-nowrap">Net Payout</th>
+                    <th className="px-4 py-3.5 text-left whitespace-nowrap">Bank Details</th>
+                    <th className="px-4 py-3.5 text-center whitespace-nowrap">Status</th>
+                    <th className="px-4 py-3.5 text-right whitespace-nowrap">Admin Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#f8fafc]">
+                <tbody className="divide-y divide-[#f8fafc] bg-white">
                   {filtered.map((s) => {
                     const isPending = s.status === "pending";
                     const isVerified = s.status === "verified";
@@ -184,71 +188,100 @@ export default function AdminSettlementsPage() {
                     const isSuspended = s.status === "suspended";
 
                     return (
-                      <tr key={s._id || s.settlementId} className="hover:bg-[#fafafa]">
-                        <td className="py-3.5 font-mono font-bold text-[#1e293b]">{s.settlementId}</td>
-                        <td className="py-3.5 font-semibold text-[#1e293b]">{s.operator}</td>
-                        <td className="py-3.5 text-[#64748b]">
+                      <tr key={s._id || s.settlementId} className="hover:bg-[#fafafa] transition-colors">
+                        <td className="px-4 py-3.5 font-mono font-bold text-[#1e293b] whitespace-nowrap">
+                          {s.settlementId}
+                        </td>
+                        <td className="px-4 py-3.5 font-semibold text-[#1e293b] whitespace-nowrap">
+                          {s.operator}
+                        </td>
+                        <td className="px-4 py-3.5 text-[#64748b] whitespace-nowrap">
                           {new Date(s.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                         </td>
-                        <td className="py-3.5 font-medium text-[#1e293b]">€{(s.requestedAmount || 0).toLocaleString("en-US")}</td>
-                        <td className="py-3.5 font-mono text-[#f26522]">€{(s.commissionDeducted || 0).toLocaleString("en-US")}</td>
-                        <td className="py-3.5 font-bold text-[#4a6d00]">€{(s.netPayout || 0).toLocaleString("en-US")}</td>
-                        <td className="py-3.5 text-[#64748b]">{s.bankDetails || "NEFT Transfer"}</td>
-                        <td className="py-3.5">
+                        <td className="px-4 py-3.5 font-medium text-[#1e293b] text-right whitespace-nowrap">
+                          €{(s.requestedAmount || 0).toLocaleString("en-US")}
+                        </td>
+                        <td className="px-4 py-3.5 font-mono text-[#f26522] text-right whitespace-nowrap">
+                          €{(s.commissionDeducted || 0).toLocaleString("en-US")}
+                        </td>
+                        <td className="px-4 py-3.5 font-bold text-[#4a6d00] text-right whitespace-nowrap">
+                          €{(s.netPayout || 0).toLocaleString("en-US")}
+                        </td>
+                        <td className="px-4 py-3.5 text-[#64748b] whitespace-nowrap">
+                          <button
+                            onClick={() => setSelectedSettlement(s)}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-[#f8fafc] px-2.5 py-1 text-[11px] font-medium text-[#1e293b] hover:bg-[#f1f5f9] border border-[#e2e8f0] transition max-w-[180px] truncate"
+                          >
+                            <Building size={12} className="text-[#4a6d00] shrink-0" />
+                            <span className="truncate">
+                              {s.bankDetails ? s.bankDetails.split('(')[0].trim() : "Bank Transfer"}
+                            </span>
+                          </button>
+                        </td>
+                        <td className="px-4 py-3.5 text-center whitespace-nowrap">
                           {isPending && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">
                               <Clock size={12} /> Pending Verification
                             </span>
                           )}
                           {isVerified && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold text-blue-700">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700">
                               <ShieldCheck size={12} /> Verified
                             </span>
                           )}
                           {isSettled && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
                               <CheckCircle2 size={12} /> Settled
                             </span>
                           )}
                           {isSuspended && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-[10px] font-bold text-rose-700">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-bold text-rose-700">
                               <AlertTriangle size={12} /> Suspended
                             </span>
                           )}
                         </td>
-                        <td className="py-3.5 text-right space-x-1.5">
-                          {isPending && (
+                        <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center justify-end gap-1.5">
                             <button
-                              onClick={() => updateStatus(s._id, "verified")}
-                              className="rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition"
+                              onClick={() => setSelectedSettlement(s)}
+                              title="View Full Details"
+                              className="rounded-lg bg-[#f1f5f9] p-1.5 text-[#64748b] hover:bg-[#e2e8f0] hover:text-[#1e293b] transition"
                             >
-                              Verify
+                              <Eye size={14} />
                             </button>
-                          )}
-                          {(isPending || isVerified) && (
-                            <button
-                              onClick={() => updateStatus(s._id, "settled")}
-                              className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100 transition"
-                            >
-                              Settle
-                            </button>
-                          )}
-                          {!isSuspended && (
-                            <button
-                              onClick={() => updateStatus(s._id, "suspended")}
-                              className="rounded-lg bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-100 transition"
-                            >
-                              Suspend
-                            </button>
-                          )}
-                          {isSuspended && (
-                            <button
-                              onClick={() => updateStatus(s._id, "verified")}
-                              className="rounded-lg bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 hover:bg-amber-100 transition"
-                            >
-                              Reactivate
-                            </button>
-                          )}
+                            {isPending && (
+                              <button
+                                onClick={() => updateStatus(s._id, "verified")}
+                                className="rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 hover:bg-blue-100 transition"
+                              >
+                                Verify
+                              </button>
+                            )}
+                            {(isPending || isVerified) && (
+                              <button
+                                onClick={() => updateStatus(s._id, "settled")}
+                                className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100 transition"
+                              >
+                                Settle
+                              </button>
+                            )}
+                            {!isSuspended && (
+                              <button
+                                onClick={() => updateStatus(s._id, "suspended")}
+                                className="rounded-lg bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-100 transition"
+                              >
+                                Suspend
+                              </button>
+                            )}
+                            {isSuspended && (
+                              <button
+                                onClick={() => updateStatus(s._id, "verified")}
+                                className="rounded-lg bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 hover:bg-amber-100 transition"
+                              >
+                                Reactivate
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -258,6 +291,105 @@ export default function AdminSettlementsPage() {
             </div>
           )}
         </div>
+
+        {/* Settlement Details Inspection Modal */}
+        <Modal
+          open={!!selectedSettlement}
+          onClose={() => setSelectedSettlement(null)}
+          title={`Settlement Details — ${selectedSettlement?.settlementId || ""}`}
+          wide
+        >
+          {selectedSettlement && (
+            <div className="space-y-4 text-left">
+              <div className="flex items-center justify-between rounded-xl bg-[#f8fafc] p-4 border border-[#e2e8f0]">
+                <div>
+                  <p className="text-xs font-medium text-[#64748b]">Operator Name</p>
+                  <p className="text-base font-bold text-[#1e293b]">{selectedSettlement.operator}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-medium text-[#64748b]">Current Status</p>
+                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold capitalize mt-0.5 bg-white border border-[#e2e8f0]">
+                    {selectedSettlement.status}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-xl border border-[#e2e8f0] p-3.5 bg-white">
+                  <span className="text-[11px] font-medium text-[#64748b]">Requested Amount</span>
+                  <p className="text-base font-black text-[#1e293b] mt-1">
+                    €{(selectedSettlement.requestedAmount || selectedSettlement.amount || 0).toLocaleString("en-US")}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-[#e2e8f0] p-3.5 bg-white">
+                  <span className="text-[11px] font-medium text-[#64748b]">Platform Commission</span>
+                  <p className="text-base font-black text-[#f26522] mt-1">
+                    €{(selectedSettlement.commissionDeducted || 0).toLocaleString("en-US")}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-[#d7e4c2] p-3.5 bg-[#f4f7ee]">
+                  <span className="text-[11px] font-medium text-[#4a6d00]">Net Operator Payout</span>
+                  <p className="text-base font-black text-[#4a6d00] mt-1">
+                    €{(selectedSettlement.netPayout || (selectedSettlement.requestedAmount || 0) - (selectedSettlement.commissionDeducted || 0)).toLocaleString("en-US")}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#e2e8f0] p-4 bg-white space-y-3">
+                <h3 className="text-xs font-bold text-[#1e293b] uppercase tracking-wide flex items-center gap-1.5">
+                  <Building size={14} className="text-[#4a6d00]" /> Full Registered Bank & Disbursement Details
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="rounded-lg bg-[#f8fafc] p-3 border border-[#f1f5f9]">
+                    <span className="text-[#64748b] block font-medium">Bank & Account Information</span>
+                    <p className="font-semibold text-[#1e293b] mt-1 text-sm">{selectedSettlement.bankDetails || "NEFT / Wire Transfer"}</p>
+                  </div>
+                  <div className="rounded-lg bg-[#f8fafc] p-3 border border-[#f1f5f9]">
+                    <span className="text-[#64748b] block font-medium">Requested On</span>
+                    <p className="font-semibold text-[#1e293b] mt-1 text-sm">
+                      {new Date(selectedSettlement.createdAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#e2e8f0]">
+                {selectedSettlement.status === "pending" && (
+                  <button
+                    onClick={() => updateStatus(selectedSettlement._id, "verified")}
+                    className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition"
+                  >
+                    Verify Settlement
+                  </button>
+                )}
+                {(selectedSettlement.status === "pending" || selectedSettlement.status === "verified") && (
+                  <button
+                    onClick={() => updateStatus(selectedSettlement._id, "settled")}
+                    className="rounded-xl bg-[#4a6d00] px-4 py-2 text-xs font-bold text-white hover:bg-[#3d5900] transition"
+                  >
+                    Mark as Settled
+                  </button>
+                )}
+                {selectedSettlement.status !== "suspended" && (
+                  <button
+                    onClick={() => updateStatus(selectedSettlement._id, "suspended")}
+                    className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white hover:bg-rose-700 transition"
+                  >
+                    Suspend Payout
+                  </button>
+                )}
+                {selectedSettlement.status === "suspended" && (
+                  <button
+                    onClick={() => updateStatus(selectedSettlement._id, "verified")}
+                    className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white hover:bg-amber-700 transition"
+                  >
+                    Reactivate Settlement
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </Modal>
 
       </div>
     </AdminLayout>
