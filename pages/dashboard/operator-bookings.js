@@ -9,6 +9,31 @@ import {
 
 const GREEN = "#4a6d00";
 
+const formatSeatKey = (key) => {
+  if (!key) return "";
+  const [r, c] = key.split('-');
+  if (c === 'middle') return `${Number(r) + 1}M`;
+  return `${Number(r) + 1}${String.fromCharCode(65 + Number(c))}`;
+};
+
+const isPastDeparture = (dateStr, timeStr) => {
+  if (!dateStr) return false;
+  try {
+    const d = new Date(dateStr);
+    if (timeStr) {
+      const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      if (match) {
+        let [_, h, m, ampm] = match;
+        h = parseInt(h, 10);
+        if (ampm.toUpperCase() === 'PM' && h < 12) h += 12;
+        if (ampm.toUpperCase() === 'AM' && h === 12) h = 0;
+        d.setHours(h, parseInt(m, 10), 0, 0);
+      }
+    }
+    return new Date() > d;
+  } catch { return false; }
+};
+
 function readUser() {
   if (typeof window === "undefined") return null;
   try { return JSON.parse(localStorage.getItem("userDetail") || "null"); } catch { return null; }
@@ -149,10 +174,6 @@ export default function OperatorBookings() {
             <p className="mt-1 text-2xl font-black text-green-600">{confirmedCount}</p>
           </div>
           <div className="rounded-2xl border border-[#e2e8f0] bg-white p-4">
-            <p className="text-xs font-semibold text-[#64748b]">Pending</p>
-            <p className="mt-1 text-2xl font-black text-amber-600">{pendingCount}</p>
-          </div>
-          <div className="rounded-2xl border border-[#e2e8f0] bg-white p-4">
             <p className="text-xs font-semibold text-[#64748b]">Estimated Revenue</p>
             <p className="mt-1 text-2xl font-black text-[#f26522]">€{totalRevenue.toFixed(2)}</p>
           </div>
@@ -167,7 +188,7 @@ export default function OperatorBookings() {
           </div>
 
           <div className="flex gap-1.5 overflow-x-auto rounded-xl border border-[#e2e8f0] bg-white p-1">
-            {["all", "confirmed", "pending", "cancelled"].map(f => (
+            {["all", "confirmed", "cancelled"].map(f => (
               <button key={f} onClick={() => setFilter(f)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-bold capitalize transition-all ${filter === f ? "bg-[#4a6d00] text-white shadow-sm" : "text-[#64748b] hover:text-[#1e293b]"}`}>
                 {f}
@@ -278,10 +299,12 @@ export default function OperatorBookings() {
                 ["Route", view.route],
                 ["Operator", view.operator || user.fullname],
                 ["Travel Date", view.date || "N/A"],
+                ["Departure Time", view.departure || "N/A"],
+                ["Arrival Time", view.arrival || "N/A"],
                 ["Total Seats", view.seats],
-                ["Seat Numbers", view.seatKeys && view.seatKeys.length > 0 ? view.seatKeys.join(", ") : "Auto Assigned"],
+                ["Seat Numbers", view.seatKeys && view.seatKeys.length > 0 ? view.seatKeys.map(formatSeatKey).join(", ") : "Auto Assigned"],
                 ["Total Fare", `€${view.amount}`],
-                ["Booking Date", view.createdAt ? new Date(view.createdAt).toLocaleDateString() : "N/A"],
+                ["Booked At", view.createdAt ? new Date(view.createdAt).toLocaleString() : "N/A"],
               ].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between rounded-xl bg-[#f8fafc] px-4 py-2.5">
                   <span className="text-xs font-semibold text-[#64748b]">{k}</span>
@@ -291,13 +314,13 @@ export default function OperatorBookings() {
             </div>
 
             <div className="flex gap-3 pt-2">
-              {view.status !== "cancelled" && (
+              {view.status !== "cancelled" && !isPastDeparture(view.date, view.departure) && (
                 <button onClick={() => updateStatus(view.id, "cancelled")} disabled={actionLoading}
                   className="flex-1 rounded-xl border border-red-200 bg-red-50 py-2.5 text-xs font-bold text-red-600 hover:bg-red-100 disabled:opacity-50">
                   Cancel Booking
                 </button>
               )}
-              {view.status !== "confirmed" && (
+              {view.status !== "confirmed" && !isPastDeparture(view.date, view.departure) && (
                 <button onClick={() => updateStatus(view.id, "confirmed")} disabled={actionLoading}
                   className="flex-1 rounded-xl py-2.5 text-xs font-bold text-white disabled:opacity-50"
                   style={{ backgroundColor: GREEN }}>

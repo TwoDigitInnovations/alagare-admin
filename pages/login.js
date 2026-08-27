@@ -3,8 +3,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { AuthApi, Api, ensureApiKey, setClientKeys } from "@/services/service";
 import { Eye, EyeOff, Lock, Mail, Bus, Phone } from "lucide-react";
+import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 
 const GREEN = "#4a6d00";
+
 
 export default function LoginPage() {
   const router = useRouter();
@@ -53,11 +56,14 @@ export default function LoginPage() {
   };
 
   const handleSendOtp = async () => {
-    if (!phone.trim()) { setError("Enter your phone number"); return; }
+    if (!phone || !isValidPhoneNumber(phone)) { 
+      setError("Please enter a valid phone number"); 
+      return; 
+    }
     setError(""); setLoading(true);
     try {
       await ensureApiKey();
-      await Api("post", "operator/send-otp", { phone: phone.trim() }, router);
+      await Api("post", "operator/send-otp", { phone: phone.trim(), isLogin: true }, router);
       setOtpSent(true);
       setOtpTimer(30);
     } catch (err) {
@@ -182,11 +188,15 @@ export default function LoginPage() {
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-[#374151]">Phone Number</label>
                   <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
-                      <input type="tel" value={phone} onChange={e => { setPhone(e.target.value); setOtpSent(false); setOtp(""); }}
-                        placeholder="+1 234 567 8900" disabled={otpSent}
-                        className="w-full rounded-xl border border-[#e2e8f0] bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20 disabled:bg-zinc-50" />
+                    <div className={`relative flex-1 phone-input-wrapper rounded-xl border ${error && error.includes("phone") ? 'border-red-500' : 'border-[#e2e8f0]'} bg-white px-4 py-2.5 transition focus-within:border-[#4a6d00] focus-within:ring-2 focus-within:ring-[#4a6d00]/20`}>
+                      <PhoneInput
+                        international
+                        defaultCountry="US"
+                        placeholder="Phone Number"
+                        value={phone}
+                        onChange={val => { setPhone(val || ""); setOtpSent(false); setOtp(""); setError(""); }}
+                        style={{ width: "100%", background: "transparent", border: "none", outline: "none", fontSize: "14px" }}
+                      />
                     </div>
                     {!otpSent && (
                       <button type="button" onClick={handleSendOtp} disabled={loading}

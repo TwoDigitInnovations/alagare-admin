@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import AdminLayout from "@/components/AdminLayout";
 import ContentEditor from "@/components/ContentEditor";
 import { Api } from "@/services/service";
-import { toastSuccess, toastError } from "@/utils/swal";
+import { toastSuccess, toastError, swalConfirm } from "@/utils/swal";
 import { Save, FileText, Shield, HelpCircle, Plus, Trash2 } from "lucide-react";
 
 export default function ContentPage() {
@@ -89,7 +89,9 @@ export default function ContentPage() {
     });
   };
 
-  const removeFaq = (index) => {
+  const removeFaq = async (index) => {
+    const ok = await swalConfirm("Delete FAQ?", "Are you sure you want to delete this question?");
+    if (!ok) return;
     setForm((prev) => ({
       ...prev,
       faqs: prev.faqs.filter((_, i) => i !== index),
@@ -110,7 +112,9 @@ export default function ContentPage() {
     });
   };
 
-  const removeOperatorFaq = (index) => {
+  const removeOperatorFaq = async (index) => {
+    const ok = await swalConfirm("Delete FAQ?", "Are you sure you want to delete this question?");
+    if (!ok) return;
     setForm((prev) => ({
       ...prev,
       operatorFaqs: (prev.operatorFaqs || []).filter((_, i) => i !== index),

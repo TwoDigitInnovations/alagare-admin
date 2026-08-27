@@ -17,6 +17,7 @@ function readUser() {
 export default function OperatorDashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     const u = readUser();
@@ -61,10 +62,28 @@ export default function OperatorDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button className="relative rounded-lg border border-[#e2e8f0] p-2 hover:bg-[#f4f6f8]">
-            <Bell size={16} style={{ color: GREEN }} />
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[#f26522]" />
-          </button>
+          <div className="relative">
+            <button 
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative rounded-lg border border-[#e2e8f0] p-2 hover:bg-[#f4f6f8]">
+              <Bell size={16} style={{ color: GREEN }} />
+            </button>
+            {showNotifications && (
+              <div className="absolute right-0 top-full mt-2 w-72 rounded-xl border border-[#e2e8f0] bg-white shadow-lg overflow-hidden z-50">
+                <div className="border-b border-[#e2e8f0] bg-[#f8fafc] px-4 py-3 flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-[#1e293b]">Notifications</h3>
+                  <button onClick={() => setShowNotifications(false)} className="text-[#64748b] hover:text-[#1e293b] text-xs">Close</button>
+                </div>
+                <div className="p-8 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#f4f6f8] mb-3">
+                    <Bell size={20} className="text-[#94a3b8]" />
+                  </div>
+                  <p className="text-sm font-semibold text-[#1e293b]">All caught up!</p>
+                  <p className="mt-1 text-xs text-[#64748b]">No notifications found right now.</p>
+                </div>
+              </div>
+            )}
+          </div>
           <button onClick={logout}
             className="flex items-center gap-1.5 rounded-xl border border-[#e2e8f0] px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors">
             <LogOut size={14} /> Logout

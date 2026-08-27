@@ -62,7 +62,7 @@ export default function BookingsPage() {
               />
             </div>
             <div className="flex gap-2 overflow-x-auto">
-              {["all", "confirmed", "pending", "cancelled"].map((f) => (
+              {["all", "confirmed", "cancelled"].map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
@@ -152,7 +152,9 @@ export default function BookingsPage() {
       )}
 
       <Modal open={!!view} onClose={() => setView(null)} title="Booking Details">
-        {view && (
+        {view && (() => {
+          const isPastBooking = view.date ? new Date(view.date) < new Date(new Date().setHours(0,0,0,0)) : false;
+          return (
           <div className="space-y-3">
             {[
               ["Reference", view.ref],
@@ -161,6 +163,9 @@ export default function BookingsPage() {
               ["Route", view.route],
               ["Operator", view.operator],
               ["Date", view.date || "—"],
+              ["Departure Time", view.departure || "—"],
+              ["Arrival Time", view.arrival || "—"],
+              ["Booked At", view.createdAt ? new Date(view.createdAt).toLocaleString() : "—"],
               ["Seats", view.seats],
               ["Amount", `€${view.amount}`],
               ["Status", view.status],
@@ -173,22 +178,26 @@ export default function BookingsPage() {
                 <span className="text-sm font-semibold capitalize text-[#1e293b]">{v}</span>
               </div>
             ))}
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => updateStatus(view.id, "cancelled")}
-                className="flex-1 rounded-xl border border-[#e2e8f0] py-2.5 text-sm font-medium hover:bg-[#f8fafc]"
-              >
-                Cancel Booking
-              </button>
-              <button
-                onClick={() => updateStatus(view.id, "confirmed")}
-                className="flex-1 rounded-xl bg-[#4a6d00] py-2.5 text-sm font-semibold text-white"
-              >
-                Confirm
-              </button>
-            </div>
+            
+            {!isPastBooking && (
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => updateStatus(view.id, "cancelled")}
+                  className="flex-1 rounded-xl border border-[#e2e8f0] py-2.5 text-sm font-medium hover:bg-[#f8fafc]"
+                >
+                  Cancel Booking
+                </button>
+                <button
+                  onClick={() => updateStatus(view.id, "confirmed")}
+                  className="flex-1 rounded-xl bg-[#4a6d00] py-2.5 text-sm font-semibold text-white"
+                >
+                  Confirm
+                </button>
+              </div>
+            )}
           </div>
-        )}
+          );
+        })()}
       </Modal>
     </AdminLayout>
   );

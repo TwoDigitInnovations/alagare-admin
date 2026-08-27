@@ -1,11 +1,12 @@
 import axios from "axios";
 
-// const ConstantsUrl = "http://localhost:3008/api/";
-// const AuthUrl = "http://localhost:3008/";
-
-
 const ConstantsUrl = "https://api.alagare.net/api/";
 const AuthUrl = "https://api.alagare.net/";
+
+
+// const ConstantsUrl = "http://localhost:3008/api/";
+// const AuthUrl = "http://localhost:3008/";
+// commnet
 
 const APP_SETUP_NAME = "alagare-mobile";
 
@@ -33,31 +34,27 @@ const setClientKeys = (keys) => {
 
 const getGoogleMapsKey = () => getClientKeys()?.googleMaps || "";
 
-/** Fetch X-API-Key (+ optional keys) from backend by app setup name */
-async function ensureApiKey() {
+async function ensureApiKey(forceRefresh = false) {
   if (typeof window === "undefined") return "";
 
+  const cached = getApiKey();
+  if (cached && !forceRefresh) return cached;
+
   try {
-    const res = await axios.get(`${AuthUrl}setup/${APP_SETUP_NAME}`, { timeout: 15000 });
-    if (res.data?.status !== true) throw new Error(res.data?.message || "Failed to load application setup");
-    const freshKey = res.data?.data?.apiKey;
-    if (!freshKey) throw new Error("Application API key missing from setup");
-
-    const cached = getApiKey();
-    const cachedId = cached ? String(cached).split('.')[0] : null;
-    const freshId = String(freshKey).split('.')[0];
-
-    if (!cached || cachedId !== freshId || cached !== freshKey) {
+    const res = await axios.get(`${AuthUrl}setup/${APP_SETUP_NAME}`, { timeout: 10000 });
+    if (res.data?.status === true && res.data?.data?.apiKey) {
+      const freshKey = res.data.data.apiKey;
       localStorage.setItem("apiKey", freshKey);
       if (res.data?.data?.keys) setClientKeys(res.data.data.keys);
+      return freshKey;
     }
-    return freshKey;
   } catch {
-    const cached = getApiKey();
     if (cached) return cached;
-    throw new Error("Cannot reach setup endpoint");
   }
+  return cached || "";
 }
+
+// code
 
 const authHeaders = (extra = {}) => {
   const headers = { ...extra };
@@ -68,18 +65,42 @@ const authHeaders = (extra = {}) => {
   return headers;
 };
 
+async function callWithApiKeyAutoRetry(fn) {
+  try {
+    await ensureApiKey();
+    return await fn();
+  } catch (err) {
+    const msg = String(err?.response?.data?.message || '').toLowerCase();
+    const isApiKeyErr = err?.response?.status === 401 && (msg.includes("api key") || msg.includes("unauthorized"));
+
+    if (isApiKeyErr && typeof window !== "undefined") {
+      localStorage.removeItem("apiKey");
+      try {
+        await ensureApiKey(true);
+        return await fn();
+      } catch {
+        throw err;
+      }
+    }
+    throw err;
+  }
+}
+
 function Api(method, url, data, router) {
   return new Promise(function (resolve, reject) {
-    axios({
-      method,
-      url: ConstantsUrl + url,
-      data,
-      headers: authHeaders(),
-    }).then(
+    callWithApiKeyAutoRetry(() =>
+      axios({
+        method,
+        url: ConstantsUrl + url,
+        data,
+        headers: authHeaders(),
+      })
+    ).then(
       (res) => resolve(res.data),
       (err) => {
         if (err.response) {
-          if (err?.response?.status === 401) {
+          const msg = String(err.response.data?.message || '').toLowerCase();
+          if (err?.response?.status === 401 && !msg.includes("api key")) {
             if (typeof window !== "undefined") {
               localStorage.removeItem("userDetail");
               localStorage.removeItem("token");
@@ -98,16 +119,19 @@ function Api(method, url, data, router) {
 
 function ApiFormData(method, url, data, router) {
   return new Promise(function (resolve, reject) {
-    axios({
-      method,
-      url: ConstantsUrl + url,
-      data,
-      headers: authHeaders({ "Content-Type": "multipart/form-data" }),
-    }).then(
+    callWithApiKeyAutoRetry(() =>
+      axios({
+        method,
+        url: ConstantsUrl + url,
+        data,
+        headers: authHeaders({ "Content-Type": "multipart/form-data" }),
+      })
+    ).then(
       (res) => resolve(res.data),
       (err) => {
         if (err.response) {
-          if (err?.response?.status === 401) {
+          const msg = String(err.response.data?.message || '').toLowerCase();
+          if (err?.response?.status === 401 && !msg.includes("api key")) {
             if (typeof window !== "undefined") {
               localStorage.removeItem("userDetail");
               router?.push("/");
@@ -124,17 +148,20 @@ function ApiFormData(method, url, data, router) {
 
 function ApiBlobData(method, url, data, router) {
   return new Promise(function (resolve, reject) {
-    axios({
-      method,
-      url: ConstantsUrl + url,
-      data,
-      responseType: "blob",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-    }).then(
+    callWithApiKeyAutoRetry(() =>
+      axios({
+        method,
+        url: ConstantsUrl + url,
+        data,
+        responseType: "blob",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+      })
+    ).then(
       (res) => resolve(res),
       (err) => {
         if (err.response) {
-          if (err?.response?.status === 401) {
+          const msg = String(err.response.data?.message || '').toLowerCase();
+          if (err?.response?.status === 401 && !msg.includes("api key")) {
             if (typeof window !== "undefined") {
               localStorage.removeItem("userDetail");
               router?.push("/");
@@ -149,26 +176,27 @@ function ApiBlobData(method, url, data, router) {
   });
 }
 
-/** Auth + api-users (root paths, not under /api/) */
 function AuthApi(method, url, data, router) {
   return new Promise(function (resolve, reject) {
-    // /api-users is exempt from X-API-Key; /auth/* still needs it
-    const needsApiKey = !String(url).startsWith("api-users");
-    const headers = { Authorization: `Bearer ${getToken()}` };
-    if (needsApiKey && getApiKey()) {
-      headers["X-API-Key"] = getApiKey();
-    }
-
-    axios({
-      method,
-      url: AuthUrl + url,
-      data,
-      headers,
+    callWithApiKeyAutoRetry(async () => {
+      const needsApiKey = !String(url).startsWith("api-users");
+      const headers = { Authorization: `Bearer ${getToken()}` };
+      if (needsApiKey) {
+        const key = await ensureApiKey();
+        if (key) headers["X-API-Key"] = key;
+      }
+      return axios({
+        method,
+        url: AuthUrl + url,
+        data,
+        headers,
+      });
     }).then(
       (res) => resolve(res.data),
       (err) => {
         if (err.response) {
-          if (err?.response?.status === 401 && router) {
+          const msg = String(err.response.data?.message || '').toLowerCase();
+          if (err?.response?.status === 401 && router && !msg.includes("api key")) {
             localStorage.removeItem("userDetail");
             localStorage.removeItem("token");
             localStorage.removeItem("adminAuth");

@@ -5,7 +5,8 @@ import Badge from "@/components/Badge";
 import Modal from "@/components/Modal";
 import { Api } from "@/services/service";
 import { toastSuccess, toastError, swalConfirm } from "@/utils/swal";
-import { Search, Bus, RefreshCw, Eye, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Search, Bus, RefreshCw, Eye, ShieldCheck, AlertTriangle, MapPin } from "lucide-react";
+import LiveMap from "@/components/LiveMap";
 
 const formatScheduleLabel = (val) => {
   if (!val) return "—";
@@ -28,6 +29,7 @@ export default function RoutesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedRoute, setSelectedRoute] = useState(null);
   const [detailsModal, setDetailsModal] = useState(false);
+  const [mapModal, setMapModal] = useState(false);
 
   const loadRoutes = () => {
     setLoading(true);
@@ -58,17 +60,46 @@ export default function RoutesPage() {
       await Api("put", `admin/routes/${r.id || r.routeId}`, { ...r, status: newStatus }, router);
       toastSuccess(`Route marked as ${newStatus}`);
       if (selectedRoute && (selectedRoute.id === r.id || selectedRoute.routeId === r.routeId)) {
-        setSelectedRoute((prev) => ({ ...prev, status: newStatus }));
+        setSelectedRoute({ ...r, status: newStatus });
       }
       loadRoutes();
-    } catch {
-      toastError("Failed to update route status");
+    } catch (err) {
+      toastError(err?.message || `Failed to update status`);
+    }
+  };
+
+  const startSimulation = async (r) => {
+    const routeCode = r.routeId || r.id;
+    const ok = await swalConfirm(`Start Live Tracking?`, `This will start a simulated bus for ${r.from} → ${r.to}`);
+    if (!ok) return;
+
+    try {
+      await Api("post", "admin/buses/tracking/simulate", { routeId: routeCode, durationSeconds: 300 }, router);
+      toastSuccess(`Simulation started successfully! Map will update live.`);
+    } catch (err) {
+      toastError(err?.message || `Failed to start simulation`);
     }
   };
 
   const openDetails = (r) => {
     setSelectedRoute(r);
     setDetailsModal(true);
+  };
+
+  const stopSimulation = (route) => {
+    const routeCode = route.routeId || route.id;
+    swalConfirm("Stop Simulation?", "Are you sure you want to stop the simulation for this route?").then((result) => {
+      if (result.isConfirmed) {
+        Api("post", "admin/buses/tracking/stop-simulate", { routeId: routeCode }, router)
+          .then(() => {
+            toastSuccess("Simulation stopped successfully!");
+          })
+          .catch((err) => {
+            toastError("Failed to stop simulation.");
+            console.error(err);
+          });
+      }
+    });
   };
 
   return (
@@ -232,7 +263,27 @@ export default function RoutesPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 mt-4 sm:mt-0">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => startSimulation(selectedRoute)}
+                      className="flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition"
+                    >
+                      <Bus size={14} /> Simulate Trip
+                    </button>
+                    <button
+                      onClick={() => stopSimulation(selectedRoute)}
+                      className="flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 transition"
+                    >
+                      Stop Simulation
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => setMapModal(true)}
+                    className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition"
+                  >
+                    <MapPin size={14} /> Track Live Map
+                  </button>
                   {selectedRoute.status === "active" ? (
                     <button
                       onClick={() => updateRouteStatus(selectedRoute, "inactive")}
@@ -304,6 +355,14 @@ export default function RoutesPage() {
                   Close Inspection
                 </button>
               </div>
+            </div>
+          )}
+        </Modal>
+
+        <Modal open={mapModal} onClose={() => setMapModal(false)} title="Live Bus Tracking" wide>
+          {selectedRoute && mapModal && (
+            <div className="w-full relative">
+              <LiveMap routeId={selectedRoute.id || selectedRoute.routeId} />
             </div>
           )}
         </Modal>

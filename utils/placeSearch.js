@@ -145,12 +145,13 @@ const formatNominatim = (item) => {
   if (!name) return null;
 
   const parentCity =
-    [addr.city, addr.town, addr.municipality, addr.state_district, addr.state]
+    [addr.city, addr.town, addr.municipality, addr.state_district]
       .map((v) => (v || '').trim())
       .find((v) => v && v.toLowerCase() !== name.toLowerCase()) || '';
 
+  const state = addr.state || '';
   const country = addr.country || '';
-  const parts = [name, parentCity, country].filter(
+  const parts = [name, parentCity, state, country].filter(
     (v, i, arr) => v && arr.findIndex((x) => x.toLowerCase() === v.toLowerCase()) === i,
   );
 
@@ -159,6 +160,7 @@ const formatNominatim = (item) => {
     name,
     city: name,
     parentCity,
+    state,
     country,
     label: parts.join(', '),
     type,
@@ -216,6 +218,32 @@ async function searchNominatim(query, limit, axios) {
   return places;
 }
 
+async function searchGooglePlacesBackend(query, limit, axiosInstance) {
+  try {
+    if (typeof window === 'undefined') return [];
+    const token = localStorage.getItem('token');
+    const apiKey = localStorage.getItem('apiKey');
+    const backendBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3008/api/';
+    const base = backendBase.endsWith('/') ? backendBase : `${backendBase}/`;
+    
+    const res = await (axiosInstance || axios).get(`${base}admin/places`, {
+      params: { q: query },
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(apiKey ? { 'X-API-Key': apiKey } : {}),
+      },
+      timeout: 8000,
+    });
+
+    if (res.data?.data?.places && Array.isArray(res.data.data.places)) {
+      return res.data.data.places;
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
 /**
  * @param {string} query
  * @param {number} limit
@@ -227,10 +255,17 @@ export async function searchBusPlaces(query, limit = 12, axios) {
 
   const hubs = hubMatches(q);
   let remote = [];
-  try {
-    remote = await searchNominatim(q, limit, axios);
-  } catch {
-    remote = [];
+
+  // Primary: Google Places via backend (secure, no key exposed)
+  remote = await searchGooglePlacesBackend(q, limit, axios);
+
+  // Fallback: Nominatim if backend places returned empty
+  if (!remote || remote.length === 0) {
+    try {
+      remote = await searchNominatim(q, limit, axios);
+    } catch {
+      remote = [];
+    }
   }
 
   const seen = new Set();
@@ -239,7 +274,7 @@ export async function searchBusPlaces(query, limit = 12, axios) {
   for (const p of [...hubs, ...remote]) {
     const key = (p.label || p.name || '').toLowerCase();
     if (!key || seen.has(key)) continue;
-    // skip tiny noise: schools/colleges if Nominatim leaked them
+    // skip tiny noise: schools/colleges if leaked
     const lower = key;
     if (
       lower.includes('school') ||
