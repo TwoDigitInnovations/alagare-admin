@@ -6,6 +6,7 @@ const AuthUrl = "https://api.alagare.net/";
 
 // const ConstantsUrl = "http://localhost:3008/api/";
 // const AuthUrl = "http://localhost:3008/";
+// commnet
 
 const APP_SETUP_NAME = "alagare-mobile";
 
