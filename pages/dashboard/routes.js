@@ -69,11 +69,12 @@ export default function RoutesPage() {
   };
 
   const startSimulation = async (r) => {
+    const routeCode = r.routeId || r.id;
     const ok = await swalConfirm(`Start Live Tracking?`, `This will start a simulated bus for ${r.from} → ${r.to}`);
     if (!ok) return;
 
     try {
-      await Api("post", `v1/buses/tracking/simulate`, { routeId: r.routeId || r.id, durationSeconds: 300 }, router);
+      await Api("post", "admin/buses/tracking/simulate", { routeId: routeCode, durationSeconds: 300 }, router);
       toastSuccess(`Simulation started successfully! Map will update live.`);
     } catch (err) {
       toastError(err?.message || `Failed to start simulation`);
@@ -86,9 +87,10 @@ export default function RoutesPage() {
   };
 
   const stopSimulation = (route) => {
+    const routeCode = route.routeId || route.id;
     swalConfirm("Stop Simulation?", "Are you sure you want to stop the simulation for this route?").then((result) => {
       if (result.isConfirmed) {
-        Api("post", "admin/buses/tracking/stop-simulate", { routeId: route.id || route.routeId }, router)
+        Api("post", "admin/buses/tracking/stop-simulate", { routeId: routeCode }, router)
           .then(() => {
             toastSuccess("Simulation stopped successfully!");
           })
