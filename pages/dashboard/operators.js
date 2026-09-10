@@ -14,6 +14,7 @@ const emptyForm = {
   status: "active",
   rating: "4.8",
   reviewCount: "1200",
+  commissionRate: "",
   description: "",
 };
 
@@ -56,6 +57,7 @@ export default function OperatorsPage() {
       status: o.status,
       rating: String(o.rating ?? 0),
       reviewCount: String(o.reviewCount ?? 0),
+      commissionRate: o.commissionRate !== null && o.commissionRate !== undefined ? String(o.commissionRate) : "",
       description: o.description || "",
     });
     setModal(true);
@@ -67,6 +69,7 @@ export default function OperatorsPage() {
       ...form,
       rating: parseFloat(form.rating) || 0,
       reviewCount: parseInt(form.reviewCount, 10) || 0,
+      commissionRate: form.commissionRate !== "" ? parseFloat(form.commissionRate) : null,
     };
     try {
       if (editId) {
@@ -189,6 +192,25 @@ export default function OperatorsPage() {
               />
             </div>
           ))}
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[#64748b]">Custom Commission Rate (%) (Optional)</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="Leave blank to use default platform commission"
+              value={form.commissionRate ?? ""}
+              onChange={(e) => {
+                let val = e.target.value.replace(/[^0-9.]/g, "");
+                const parts = val.split(".");
+                if (parts.length > 2) val = parts[0] + "." + parts.slice(1).join("");
+                if (/^0[0-9]/.test(val)) {
+                  val = val.replace(/^0+/, "") || "0";
+                }
+                setForm({ ...form, commissionRate: val });
+              }}
+              className="w-full rounded-xl border border-[#e2e8f0] px-3 py-2.5 text-sm outline-none focus:border-[#4a6d00]"
+            />
+          </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-[#64748b]">Company Description</label>
             <textarea
