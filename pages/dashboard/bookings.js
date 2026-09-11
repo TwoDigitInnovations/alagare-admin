@@ -167,7 +167,9 @@ export default function BookingsPage() {
               ["Arrival Time", view.arrival || "—"],
               ["Booked At", view.createdAt ? new Date(view.createdAt).toLocaleString() : "—"],
               ["Seats", view.seats],
-              ["Amount", `€${view.amount}`],
+              ["Operator Base Fare", view.operatorBaseFare !== null ? `€${view.operatorBaseFare}` : "—"],
+              ["Platform Commission", view.commissionAmount !== null ? `€${view.commissionAmount} (${view.commissionRate || 0}%)` : "—"],
+              ["Total Charged", `€${view.amount}`],
               ["Status", view.status],
             ].map(([k, v]) => (
               <div

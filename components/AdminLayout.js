@@ -23,6 +23,7 @@ import {
   UserCircle,
   PhoneCall,
   Wallet,
+  Coins,
 } from "lucide-react";
 
 const NAV = [
@@ -31,6 +32,7 @@ const NAV = [
   { href: "/dashboard/content", label: "Content", icon: FileText },
   { href: "/dashboard/routes", label: "Bus Routes", icon: Bus },
   { href: "/dashboard/bookings", label: "Bookings", icon: Ticket },
+  { href: "/dashboard/commission", label: "Commission", icon: Coins },
   { href: "/dashboard/reports", label: "Reports", icon: MessageSquare },
   { href: "/dashboard/settlements", label: "Payout Settlements", icon: Wallet },
   { href: "/dashboard/cities", label: "Cities", icon: MapPin },
@@ -152,7 +154,7 @@ export default function AdminLayout({ children, title }) {
         </div>
       </aside>
 
-      <div className={`flex flex-1 flex-col transition-all duration-300 ${collapsed ? "lg:ml-[72px]" : "lg:ml-[260px]"}`}>
+      <div className={`flex flex-1 min-w-0 flex-col transition-all duration-300 ${collapsed ? "lg:ml-[72px]" : "lg:ml-[260px]"}`}>
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#e2e8f0] bg-white px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <button
@@ -224,7 +226,7 @@ export default function AdminLayout({ children, title }) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 animate-fade-in">{children}</main>
+        <main className="flex-1 min-w-0 p-4 sm:p-6 animate-fade-in">{children}</main>
       </div>
     </div>
   );

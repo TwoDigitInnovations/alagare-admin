@@ -30,8 +30,15 @@ export default function OperatorRevenuePage() {
   const [data, setData] = useState({
     stats: {
       grossRevenue: 0,
-      netEarnings: 0,
+      commissionRate: 5,
       platformCommission: 0,
+      totalLifetimeNetEarnings: 0,
+      withdrawnAmount: 0,
+      totalSettled: 0,
+      totalPendingPayouts: 0,
+      netEarnings: 0,
+      netOperatorEarnings: 0,
+      availableBalance: 0,
       pendingBalance: 0,
       totalBookings: 0,
       confirmedBookings: 0,
@@ -41,15 +48,16 @@ export default function OperatorRevenuePage() {
 
   const fetchRevenue = () => {
     setLoading(true);
-    const u = readUser();
-    const endpoint = u?.role === "admin" ? "admin/settlements" : "operator/revenue";
-    
     Api("get", "operator/revenue", null, router)
       .then((res) => {
         const payload = res?.data || res;
         if (payload?.stats) {
           setData({
-            stats: payload.stats,
+            stats: {
+              ...payload.stats,
+              netEarnings: payload.stats.netEarnings ?? payload.stats.availableBalance ?? 0,
+              withdrawnAmount: payload.stats.withdrawnAmount ?? 0,
+            },
             settlements: Array.isArray(payload.settlements) ? payload.settlements : [],
           });
         }
@@ -73,12 +81,14 @@ export default function OperatorRevenuePage() {
     fetchRevenue();
   }, [router]);
 
+  const availableBalance = data.stats.netEarnings;
+
   const openPayoutModal = () => {
-    if (data.stats.pendingBalance <= 0) {
-      toastError("No pending balance available for payout settlement.");
+    if (availableBalance <= 0) {
+      toastError("No available balance for payout settlement.");
       return;
     }
-    setWithdrawAmount(String(data.stats.pendingBalance));
+    setWithdrawAmount(String(availableBalance));
     setRequestModalOpen(true);
   };
 
@@ -89,8 +99,8 @@ export default function OperatorRevenuePage() {
       toastError("Please enter a valid withdrawal amount.");
       return;
     }
-    if (numAmount > data.stats.pendingBalance) {
-      toastError(`Withdrawal amount cannot exceed available balance (€${data.stats.pendingBalance}).`);
+    if (numAmount > availableBalance) {
+      toastError(`Withdrawal amount cannot exceed available balance (€${availableBalance}).`);
       return;
     }
 
@@ -139,8 +149,6 @@ export default function OperatorRevenuePage() {
   if (!user) return null;
 
   const numWithdraw = Number(withdrawAmount) || 0;
-  const estCommission = Math.round(numWithdraw * 0.1);
-  const estNetPayout = Math.max(0, numWithdraw - estCommission);
 
   return (
     <div className="min-h-screen bg-[#f4f6f8]" style={{ fontFamily: "var(--font-poppins, Poppins, sans-serif)" }}>
@@ -171,6 +179,7 @@ export default function OperatorRevenuePage() {
 
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8 space-y-6">
 
+        {/* 4 Financial Stat Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-2xs">
             <div className="flex items-center justify-between">
@@ -195,7 +204,7 @@ export default function OperatorRevenuePage() {
             <p className="mt-3 text-2xl font-black text-[#f26522]">
               €{data.stats.platformCommission.toLocaleString("en-US")}
             </p>
-            <p className="mt-1 text-xs text-[#64748b]">10% Alagare platform fee</p>
+            <p className="mt-1 text-xs text-[#64748b]">{data.stats.commissionRate || 5}% Platform fee</p>
           </div>
 
           <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-2xs">
@@ -206,37 +215,40 @@ export default function OperatorRevenuePage() {
               </div>
             </div>
             <p className="mt-3 text-2xl font-black text-[#4a6d00]">
-              €{data.stats.netEarnings.toLocaleString("en-US")}
+              €{availableBalance.toLocaleString("en-US")}
             </p>
-            <p className="mt-1 text-xs text-[#64748b]">Gross revenue minus commission</p>
+            <p className="mt-1 text-xs text-[#64748b]">Available balance for withdrawal</p>
           </div>
 
           <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#64748b] uppercase tracking-wide">Pending Payout Balance</span>
+              <span className="text-xs font-bold text-[#64748b] uppercase tracking-wide">Withdrawn / Payouts</span>
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                 <Clock size={18} />
               </div>
             </div>
             <p className="mt-3 text-2xl font-black text-blue-600">
-              €{data.stats.pendingBalance.toLocaleString("en-US")}
+              €{data.stats.withdrawnAmount.toLocaleString("en-US")}
             </p>
-            <p className="mt-1 text-xs text-[#64748b]">Ready for next settlement cycle</p>
+            <p className="mt-1 text-xs text-[#64748b]">
+              {data.stats.totalPendingPayouts > 0 ? `€${data.stats.totalPendingPayouts} pending approval` : "Total requested payouts"}
+            </p>
           </div>
         </div>
 
+        {/* Request Payout Action Box */}
         <div className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-2xs">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-base font-bold text-[#1e293b]">Request Settlement Payout</h2>
               <p className="mt-0.5 text-xs text-[#64748b]">
-                Request immediate transfer of available funds (€{data.stats.pendingBalance.toLocaleString("en-US")}) to your registered bank account.
+                Request immediate transfer of your available funds (€{availableBalance.toLocaleString("en-US")}) to your registered bank account.
               </p>
             </div>
             <button
               onClick={openPayoutModal}
-              disabled={data.stats.pendingBalance <= 0}
-              className="flex items-center justify-center gap-2 rounded-xl bg-[#4a6d00] px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#3d5a00] disabled:opacity-50 transition"
+              disabled={availableBalance <= 0}
+              className="flex items-center justify-center gap-2 rounded-xl bg-[#4a6d00] px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#3d5a00] disabled:opacity-50 transition cursor-pointer"
             >
               <CreditCard size={15} />
               Request Payout Now
@@ -249,10 +261,11 @@ export default function OperatorRevenuePage() {
             </span>
             <span>{bankDetails}</span>
             <span className="text-[#cbd5e1]">|</span>
-            <span>Settlement Cycle: Every Tuesday & Friday</span>
+            <span>Settlement Cycle: Direct Bank Transfer (NEFT)</span>
           </div>
         </div>
 
+        {/* Settlement History Table */}
         <div className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-2xs">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -273,9 +286,8 @@ export default function OperatorRevenuePage() {
                     <tr className="border-b border-[#f1f5f9] text-[#94a3b8] font-semibold">
                       <th className="pb-3">Settlement ID</th>
                       <th className="pb-3">Date</th>
-                      <th className="pb-3">Requested</th>
+                      <th className="pb-3">Requested Amount</th>
                       <th className="pb-3">Net Payout</th>
-                      <th className="pb-3">Commission (10%)</th>
                       <th className="pb-3">Bank Details</th>
                       <th className="pb-3">Status</th>
                       {user?.role === "admin" && <th className="pb-3 text-right">Actions</th>}
@@ -295,8 +307,7 @@ export default function OperatorRevenuePage() {
                             {new Date(s.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                           </td>
                           <td className="py-3.5 text-[#1e293b] font-medium">€{(s.requestedAmount || s.amount).toLocaleString("en-US")}</td>
-                          <td className="py-3.5 font-bold text-[#4a6d00]">€{s.amount.toLocaleString("en-US")}</td>
-                          <td className="py-3.5 text-[#f26522] font-mono">€{(s.commission || 0).toLocaleString("en-US")}</td>
+                          <td className="py-3.5 font-bold text-[#4a6d00]">€{(s.amount || s.requestedAmount).toLocaleString("en-US")}</td>
                           <td className="py-3.5 text-[#64748b]">{s.bankDetails || "NEFT Transfer"}</td>
                           <td className="py-3.5">
                             {isPending && (
@@ -366,7 +377,7 @@ export default function OperatorRevenuePage() {
                     </div>
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-[#64748b]">{new Date(s.date).toLocaleDateString("en-US")}</span>
-                      <span className="font-bold text-[#4a6d00]">€{s.amount.toLocaleString("en-US")}</span>
+                      <span className="font-bold text-[#4a6d00]">€{(s.amount || s.requestedAmount).toLocaleString("en-US")}</span>
                     </div>
                   </div>
                 ))}
@@ -377,6 +388,7 @@ export default function OperatorRevenuePage() {
 
       </main>
 
+      {/* Payout Request Modal */}
       {requestModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150">
@@ -404,11 +416,11 @@ export default function OperatorRevenuePage() {
               <div className="rounded-xl bg-[#f8fafc] p-3 border border-[#e2e8f0] flex items-center justify-between">
                 <div>
                   <span className="text-[11px] font-semibold text-[#64748b]">Available Balance</span>
-                  <p className="text-lg font-black text-blue-600">€{data.stats.pendingBalance.toLocaleString("en-US")}</p>
+                  <p className="text-lg font-black text-[#4a6d00]">€{availableBalance.toLocaleString("en-US")}</p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setWithdrawAmount(String(data.stats.pendingBalance))}
+                  onClick={() => setWithdrawAmount(String(availableBalance))}
                   className="rounded-lg bg-[#eaf5dd] px-2.5 py-1 text-xs font-bold text-[#4a6d00] hover:bg-[#d8ebd0]"
                 >
                   Withdraw Max
@@ -422,7 +434,7 @@ export default function OperatorRevenuePage() {
                 <input
                   type="number"
                   min="1"
-                  max={data.stats.pendingBalance}
+                  max={availableBalance}
                   value={withdrawAmount}
                   onChange={(e) => setWithdrawAmount(e.target.value)}
                   placeholder="Enter amount (e.g. 200)"
@@ -434,62 +446,61 @@ export default function OperatorRevenuePage() {
               {numWithdraw > 0 && (
                 <div className="rounded-xl border border-[#e2e8f0] bg-[#fafafa] p-3 text-xs space-y-1.5 text-[#64748b]">
                   <div className="flex justify-between">
-                    <span>Requested Amount:</span>
+                    <span>Requested Withdrawal Amount:</span>
                     <span className="font-semibold text-[#1e293b]">€{numWithdraw.toLocaleString("en-US")}</span>
                   </div>
-                  <div className="flex justify-between text-[#f26522]">
-                    <span>Platform Commission (10%):</span>
-                    <span className="font-semibold">- €{estCommission.toLocaleString("en-US")}</span>
+                  <div className="flex justify-between">
+                    <span>Remaining Balance After Payout:</span>
+                    <span className="font-semibold text-blue-600">€{Math.max(0, availableBalance - numWithdraw).toLocaleString("en-US")}</span>
                   </div>
                   <div className="flex justify-between pt-1 border-t border-[#e2e8f0] font-bold text-[#4a6d00] text-sm">
                     <span>Net Transfer Amount:</span>
-                    <span>€{estNetPayout.toLocaleString("en-US")}</span>
+                    <span>€{numWithdraw.toLocaleString("en-US")}</span>
                   </div>
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-bold text-[#1e293b] mb-1">
-                  Bank Account <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-xs font-bold text-[#1e293b] mb-1">Bank Payout Account</label>
                 <input
                   type="text"
                   value={bankDetails}
                   onChange={(e) => setBankDetails(e.target.value)}
-                  required
-                  className="w-full rounded-xl border border-[#e2e8f0] bg-white px-3.5 py-2.5 text-sm font-medium text-[#1e293b] outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20"
+                  placeholder="Bank name and account number"
+                  className="w-full rounded-xl border border-[#e2e8f0] bg-white px-3.5 py-2 text-xs font-medium text-[#1e293b] outline-none focus:border-[#4a6d00]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#1e293b] mb-1">Remarks / Notes (Optional)</label>
-                <input
-                  type="text"
+                <label className="block text-xs font-bold text-[#1e293b] mb-1">Settlement Notes (Optional)</label>
+                <textarea
                   value={payoutNotes}
                   onChange={(e) => setPayoutNotes(e.target.value)}
-                  placeholder="e.g. Regular weekly settlement request"
-                  className="w-full rounded-xl border border-[#e2e8f0] bg-white px-3.5 py-2.5 text-sm text-[#1e293b] outline-none focus:border-[#4a6d00] focus:ring-2 focus:ring-[#4a6d00]/20"
+                  placeholder="Optional reference notes for finance team..."
+                  rows={2}
+                  className="w-full rounded-xl border border-[#e2e8f0] bg-white px-3.5 py-2 text-xs font-medium text-[#1e293b] outline-none focus:border-[#4a6d00]"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-2">
+              <div className="pt-2 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setRequestModalOpen(false)}
-                  className="rounded-xl border border-[#e2e8f0] px-4 py-2.5 text-xs font-bold text-[#64748b] hover:bg-[#f8fafc]"
+                  className="rounded-xl border border-[#e2e8f0] px-4 py-2 text-xs font-semibold text-[#64748b] hover:bg-[#f8fafc]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={submittingPayout || numWithdraw <= 0}
-                  className="rounded-xl bg-[#4a6d00] px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#3d5a00] disabled:opacity-50"
+                  disabled={submittingPayout || numWithdraw <= 0 || numWithdraw > availableBalance}
+                  className="rounded-xl bg-[#4a6d00] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#3d5a00] disabled:opacity-50"
                 >
                   {submittingPayout ? "Submitting..." : "Submit Payout Request"}
                 </button>
               </div>
 
             </form>
+
           </div>
         </div>
       )}
