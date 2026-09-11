@@ -145,7 +145,7 @@ export default function OperatorDashboard() {
         <div className="mt-8 rounded-2xl border border-[#e2e8f0] bg-white p-5">
           <p className="text-xs font-bold text-[#64748b] uppercase tracking-wide mb-3">Quick Info</p>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[["Platform", "TransiHub"], ["Support", "operators@alagare.com"], ["Role", "Verified Operator"], ["Portal Version", "v1.0"]].map(([k, v]) => (
+            {[["Platform", "alagare"], ["Support", "operators@alagare.com"], ["Role", "Verified Operator"], ["Portal Version", "v1.0"]].map(([k, v]) => (
               <div key={k}>
                 <p className="text-xs text-[#94a3b8]">{k}</p>
                 <p className="text-sm font-semibold text-[#1e293b] mt-0.5">{v}</p>
