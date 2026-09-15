@@ -190,12 +190,12 @@ export default function CommissionPage() {
           </div>
 
           <div>
-            <div className="mb-3 flex items-center justify-between">
+            {/* <div className="mb-3 flex items-center justify-between">
               <h2 className="text-sm font-bold text-[#1e293b]">Operator Earnings Breakdown</h2>
               <span className="text-xs text-[#64748b]">{operatorStats.length} Operators</span>
-            </div>
+            </div> */}
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {/* <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {operatorStats.map((op, idx) => (
                 <div
                   key={idx}
@@ -232,7 +232,7 @@ export default function CommissionPage() {
                   </div>
                 </div>
               ))}
-            </div>
+            </div> */}
           </div>
 
           <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm space-y-4">
