@@ -100,7 +100,7 @@ export default function OperatorPricing() {
       setFareModal(false);
       loadAll();
     } catch (err) {
-      toastError(err?.message || "Failed to update fare");
+      toastError(err?.message || err?.data?.message || (typeof err === "string" ? err : "Failed to update fare"));
     } finally {
       setFareLoading(false);
     }
@@ -125,7 +125,7 @@ export default function OperatorPricing() {
       });
       loadAll();
     } catch (err) {
-      toastError(err?.message || "Failed to create campaign");
+      toastError(err?.message || err?.data?.message || (typeof err === "string" ? err : "Failed to create campaign"));
     } finally {
       setCampLoading(false);
     }
@@ -137,8 +137,8 @@ export default function OperatorPricing() {
       await Api("put", `operator/pricing/campaigns/${camp._id}`, { status: nextStatus }, router);
       toastSuccess(`Campaign status changed to ${nextStatus}`);
       loadAll();
-    } catch {
-      toastError("Failed to update campaign");
+    } catch (err) {
+      toastError(err?.message || err?.data?.message || "Failed to update campaign");
     }
   };
 
@@ -149,8 +149,8 @@ export default function OperatorPricing() {
       await Api("delete", `operator/pricing/campaigns/${id}`, null, router);
       toastSuccess("Campaign deleted");
       loadAll();
-    } catch {
-      toastError("Failed to delete campaign");
+    } catch (err) {
+      toastError(err?.message || err?.data?.message || "Failed to delete campaign");
     }
   };
 

@@ -24,7 +24,7 @@ export default function OperatorRevenuePage() {
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const [submittingPayout, setSubmittingPayout] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [bankDetails, setBankDetails] = useState("HDFC Bank (A/C: *******8492)");
+  const [bankDetails, setBankDetails] = useState("No bank account linked");
   const [payoutNotes, setPayoutNotes] = useState("");
 
   const [data, setData] = useState({
