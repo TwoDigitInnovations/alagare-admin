@@ -129,7 +129,7 @@ export default function CommissionPage() {
                 </div>
               </div>
               <p className="mt-3 text-2xl font-bold text-[#4a6d00]">
-                €{Number(summary.totalCommissionEarned || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${Number(summary.totalCommissionEarned || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
               <p className="mt-1 flex items-center text-xs text-[#64748b]">
                 <TrendingUp size={12} className="mr-1 text-[#4a6d00]" />
@@ -147,7 +147,7 @@ export default function CommissionPage() {
                 </div>
               </div>
               <p className="mt-3 text-2xl font-bold text-[#1e293b]">
-                €{Number(summary.totalGrossAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${Number(summary.totalGrossAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
               <p className="mt-1 text-xs text-[#64748b]">
                 Total paid by passengers across all routes
@@ -164,7 +164,7 @@ export default function CommissionPage() {
                 </div>
               </div>
               <p className="mt-3 text-2xl font-bold text-[#0284c7]">
-                €{Number(summary.totalOperatorPayouts || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${Number(summary.totalOperatorPayouts || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
               <p className="mt-1 text-xs text-[#64748b]">
                 Base fare revenue payable to bus operators
@@ -219,15 +219,15 @@ export default function CommissionPage() {
                   <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-[#fafafa] p-3 text-center">
                     <div>
                       <p className="text-[10px] font-semibold uppercase text-[#94a3b8]">Gross Total</p>
-                      <p className="mt-0.5 text-xs font-bold text-[#1e293b]">€{Number(op.grossAmount || 0).toFixed(2)}</p>
+                      <p className="mt-0.5 text-xs font-bold text-[#1e293b]">${Number(op.grossAmount || 0).toFixed(2)}</p>
                     </div>
                     <div>
                       <p className="text-[10px] font-semibold uppercase text-[#94a3b8]">Base Payout</p>
-                      <p className="mt-0.5 text-xs font-bold text-[#0284c7]">€{Number(op.operatorPayout || 0).toFixed(2)}</p>
+                      <p className="mt-0.5 text-xs font-bold text-[#0284c7]">${Number(op.operatorPayout || 0).toFixed(2)}</p>
                     </div>
                     <div>
                       <p className="text-[10px] font-semibold uppercase text-[#94a3b8]">Admin Fee</p>
-                      <p className="mt-0.5 text-xs font-bold text-[#4a6d00]">+€{Number(op.commissionEarned || 0).toFixed(2)}</p>
+                      <p className="mt-0.5 text-xs font-bold text-[#4a6d00]">+${Number(op.commissionEarned || 0).toFixed(2)}</p>
                     </div>
                   </div>
                 </div>
@@ -291,15 +291,15 @@ export default function CommissionPage() {
                   <div className="grid grid-cols-3 gap-2 rounded-lg bg-white p-2.5 text-center text-xs">
                     <div>
                       <span className="text-[10px] text-[#94a3b8] block">Base Fare</span>
-                      <span className="font-semibold text-[#0284c7]">€{Number(b.operatorBaseFare || 0).toFixed(2)}</span>
+                      <span className="font-semibold text-[#0284c7]">${Number(b.operatorBaseFare || 0).toFixed(2)}</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-[#94a3b8] block">Commission ({b.commissionRate || 0}%)</span>
-                      <span className="font-bold text-[#4a6d00]">+€{Number(b.commissionAmount || 0).toFixed(2)}</span>
+                      <span className="font-bold text-[#4a6d00]">+${Number(b.commissionAmount || 0).toFixed(2)}</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-[#94a3b8] block">Customer Total</span>
-                      <span className="font-bold text-[#f26522]">€{Number(b.amount || 0).toFixed(2)}</span>
+                      <span className="font-bold text-[#f26522]">${Number(b.amount || 0).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -331,13 +331,13 @@ export default function CommissionPage() {
                       <td className="px-4 py-3 font-semibold text-[#1e293b]">{b.operator}</td>
                       <td className="px-4 py-3 text-[#64748b]">{b.route}</td>
                       <td className="px-4 py-3 text-center font-medium">{b.seats}</td>
-                      <td className="px-4 py-3 text-right font-medium text-[#0284c7]">€{Number(b.operatorBaseFare || 0).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right font-medium text-[#0284c7]">${Number(b.operatorBaseFare || 0).toFixed(2)}</td>
                       <td className="px-4 py-3 text-right">
                         <span className="inline-flex items-center rounded-full bg-[#eaf5dd] px-2 py-0.5 font-bold text-[#4a6d00]">
-                          +€{Number(b.commissionAmount || 0).toFixed(2)} <span className="ml-1 text-[10px] text-[#4a6d00]/70">({b.commissionRate || 0}%)</span>
+                          +${Number(b.commissionAmount || 0).toFixed(2)} <span className="ml-1 text-[10px] text-[#4a6d00]/70">({b.commissionRate || 0}%)</span>
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right font-bold text-[#f26522]">€{Number(b.amount || 0).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right font-bold text-[#f26522]">${Number(b.amount || 0).toFixed(2)}</td>
                       <td className="px-4 py-3 text-center">
                         <Badge variant={b.status}>{b.status}</Badge>
                       </td>

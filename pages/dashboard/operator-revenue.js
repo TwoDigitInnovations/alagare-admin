@@ -110,7 +110,7 @@ export default function OperatorRevenuePage() {
       return;
     }
     if (numAmount > availableBalance) {
-      toastError(`Withdrawal amount cannot exceed available balance (€${availableBalance}).`);
+      toastError(`Withdrawal amount cannot exceed available balance ($${availableBalance}).`);
       return;
     }
 
@@ -193,7 +193,7 @@ export default function OperatorRevenuePage() {
   const handleSycapayCashout = async (settlement) => {
     const ok = await swalConfirm(
       "Process SycaPay Payout?",
-      `Transfer €${(settlement.amount || settlement.requestedAmount).toLocaleString("en-US")} to ${settlement.payoutProvider || 'Orange'} (${settlement.recipientMobile}) via SycaPay?`
+      `Transfer $${(settlement.amount || settlement.requestedAmount).toLocaleString("en-US")} to ${settlement.payoutProvider || 'Orange'} (${settlement.recipientMobile}) via SycaPay?`
     );
     if (!ok) return;
 
@@ -256,7 +256,7 @@ export default function OperatorRevenuePage() {
               </div>
             </div>
             <p className="mt-3 text-2xl font-black text-[#1e293b]">
-              €{data.stats.grossRevenue.toLocaleString("en-US")}
+              ${data.stats.grossRevenue.toLocaleString("en-US")}
             </p>
             <p className="mt-1 text-xs text-[#64748b]">Total ticket bookings processed</p>
           </div>
@@ -269,7 +269,7 @@ export default function OperatorRevenuePage() {
               </div>
             </div>
             <p className="mt-3 text-2xl font-black text-[#f26522]">
-              €{data.stats.platformCommission.toLocaleString("en-US")}
+              ${data.stats.platformCommission.toLocaleString("en-US")}
             </p>
             <p className="mt-1 text-xs text-[#64748b]">{data.stats.commissionRate || 5}% Platform fee</p>
           </div>
@@ -282,7 +282,7 @@ export default function OperatorRevenuePage() {
               </div>
             </div>
             <p className="mt-3 text-2xl font-black text-[#4a6d00]">
-              €{availableBalance.toLocaleString("en-US")}
+              ${availableBalance.toLocaleString("en-US")}
             </p>
             <p className="mt-1 text-xs text-[#64748b]">Available balance for withdrawal</p>
           </div>
@@ -295,10 +295,10 @@ export default function OperatorRevenuePage() {
               </div>
             </div>
             <p className="mt-3 text-2xl font-black text-blue-600">
-              €{data.stats.withdrawnAmount.toLocaleString("en-US")}
+              ${data.stats.withdrawnAmount.toLocaleString("en-US")}
             </p>
             <p className="mt-1 text-xs text-[#64748b]">
-              {data.stats.totalPendingPayouts > 0 ? `€${data.stats.totalPendingPayouts} pending approval` : "Total requested payouts"}
+              {data.stats.totalPendingPayouts > 0 ? `$${data.stats.totalPendingPayouts} pending approval` : "Total requested payouts"}
             </p>
           </div>
         </div>
@@ -309,7 +309,7 @@ export default function OperatorRevenuePage() {
             <div>
               <h2 className="text-base font-bold text-[#1e293b]">Request Settlement Payout</h2>
               <p className="mt-0.5 text-xs text-[#64748b]">
-                Request immediate transfer of your available funds (€{availableBalance.toLocaleString("en-US")}) to your registered bank account.
+                Request immediate transfer of your available funds (${availableBalance.toLocaleString("en-US")}) to your registered bank account.
               </p>
             </div>
             <button
@@ -373,8 +373,8 @@ export default function OperatorRevenuePage() {
                           <td className="py-3.5 text-[#64748b]">
                             {new Date(s.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                           </td>
-                          <td className="py-3.5 text-[#1e293b] font-medium">€{(s.requestedAmount || s.amount).toLocaleString("en-US")}</td>
-                          <td className="py-3.5 font-bold text-[#4a6d00]">€{(s.amount || s.requestedAmount).toLocaleString("en-US")}</td>
+                          <td className="py-3.5 text-[#1e293b] font-medium">${(s.requestedAmount || s.amount).toLocaleString("en-US")}</td>
+                          <td className="py-3.5 font-bold text-[#4a6d00]">${(s.amount || s.requestedAmount).toLocaleString("en-US")}</td>
                           <td className="py-3.5 text-[#64748b]">
                             <div>{s.bankDetails || "NEFT Transfer"}</div>
                             {s.sycapayTransactionId && (
@@ -459,7 +459,7 @@ export default function OperatorRevenuePage() {
                     </div>
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-[#64748b]">{new Date(s.date).toLocaleDateString("en-US")}</span>
-                      <span className="font-bold text-[#4a6d00]">€{(s.amount || s.requestedAmount).toLocaleString("en-US")}</span>
+                      <span className="font-bold text-[#4a6d00]">${(s.amount || s.requestedAmount).toLocaleString("en-US")}</span>
                     </div>
                   </div>
                 ))}
@@ -502,7 +502,7 @@ export default function OperatorRevenuePage() {
                   <div className="rounded-xl bg-[#f8fafc] p-3.5 border border-[#e2e8f0] flex items-center justify-between">
                     <div>
                       <span className="text-[11px] font-semibold text-[#64748b]">Available Balance</span>
-                      <p className="text-xl font-black text-[#4a6d00]">€{availableBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                      <p className="text-xl font-black text-[#4a6d00]">${availableBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                     <button
                       type="button"
@@ -515,10 +515,10 @@ export default function OperatorRevenuePage() {
 
                   <div>
                     <label className="block text-xs font-bold text-[#1e293b] mb-1">
-                      Withdrawal Amount (€) <span className="text-red-500">*</span>
+                      Withdrawal Amount ($) <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#64748b]">€</span>
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#64748b]">$</span>
                       <input
                         type="number"
                         step="0.01"
@@ -549,15 +549,15 @@ export default function OperatorRevenuePage() {
                     <div className="rounded-xl border border-[#e2e8f0] bg-[#fafafa] p-3.5 text-xs space-y-2 text-[#64748b]">
                       <div className="flex justify-between">
                         <span>Requested Withdrawal:</span>
-                        <span className="font-semibold text-[#1e293b]">€{numWithdraw.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="font-semibold text-[#1e293b]">${numWithdraw.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Remaining Balance:</span>
-                        <span className="font-semibold text-blue-600">€{Math.max(0, availableBalance - numWithdraw).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="font-semibold text-blue-600">${Math.max(0, availableBalance - numWithdraw).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between pt-1.5 border-t border-[#e2e8f0] font-bold text-[#4a6d00] text-sm">
                         <span>Net Payout Amount:</span>
-                        <span>€{numWithdraw.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span>${numWithdraw.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
                   )}

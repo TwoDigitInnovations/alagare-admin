@@ -230,7 +230,7 @@ export default function OperatorPricing() {
                     <div className="mt-4 flex items-baseline justify-between border-t border-[#f1f5f9] pt-3">
                       <div>
                         <p className="text-[10px] uppercase font-bold tracking-wider text-[#94a3b8]">Standard Seat Fare</p>
-                        <p className="text-2xl font-black text-[#f26522]">€{r.price}</p>
+                        <p className="text-2xl font-black text-[#f26522]">${r.price}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-[10px] text-[#64748b]">Total Seats: {r.seats}</p>
@@ -299,7 +299,7 @@ export default function OperatorPricing() {
                       </div>
                       <div className="flex justify-between text-[#64748b] mb-1">
                         <span>Max Savings:</span>
-                        <span className="font-bold text-[#1e293b]">€{c.maxDiscount || "No limit"}</span>
+                        <span className="font-bold text-[#1e293b]">${c.maxDiscount || "No limit"}</span>
                       </div>
                       <div className="flex justify-between text-[#64748b]">
                         <span>Applicable Route:</span>
@@ -322,7 +322,7 @@ export default function OperatorPricing() {
               <p className="text-base font-bold text-[#1e293b]">{editRoute.from} → {editRoute.to}</p>
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-[#374151]">New Base Price per Seat (€)</label>
+              <label className="mb-1.5 block text-xs font-semibold text-[#374151]">New Base Price per Seat ($)</label>
               <input type="number" step="0.5" min="0" value={newPrice} onChange={e => setNewPrice(e.target.value)} required
                 className="w-full rounded-xl border border-[#e2e8f0] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#f26522] focus:ring-2 focus:ring-[#f26522]/20" />
             </div>
@@ -362,7 +362,7 @@ export default function OperatorPricing() {
                 className="w-full rounded-xl border border-[#e2e8f0] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#f26522]" />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-[#374151]">Max Discount (€)</label>
+              <label className="mb-1.5 block text-xs font-semibold text-[#374151]">Max Discount ($)</label>
               <input type="number" min="0" value={campForm.maxDiscount} onChange={e => setCampForm(p => ({ ...p, maxDiscount: e.target.value }))}
                 className="w-full rounded-xl border border-[#e2e8f0] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#f26522]" />
             </div>

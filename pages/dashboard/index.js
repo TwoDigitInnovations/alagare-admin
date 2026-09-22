@@ -4,7 +4,7 @@ import AdminLayout from "@/components/AdminLayout";
 import Badge from "@/components/Badge";
 import { Api } from "@/services/service";
 import {
-  Euro,
+  DollarSign,
   Ticket,
   Bus,
   Users,
@@ -18,9 +18,9 @@ const formatMoney = (n) => {
   const val = Number(n) || 0;
   if (val >= 1000) {
     const k = val / 1000;
-    return `€${k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)}K`;
+    return `$${k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)}K`;
   }
-  return `€${val.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  return `$${val.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 };
 
 export default function Dashboard() {
@@ -54,7 +54,7 @@ export default function Dashboard() {
     {
       label: "Total Revenue",
       value: formatMoney(stats.totalRevenue),
-      icon: Euro,
+      icon: DollarSign,
       color: "bg-[#eaf5dd] text-[#4a6d00]",
       change: `${stats.confirmedBookings} confirmed`,
     },
@@ -139,7 +139,7 @@ export default function Dashboard() {
                             <p className="text-xs text-[#94a3b8]">{b.email}</p>
                           </td>
                           <td className="hidden px-3 py-3 text-[#64748b] sm:table-cell">{b.route}</td>
-                          <td className="px-3 py-3 font-semibold">€{Number(b.amount || 0).toFixed(2)}</td>
+                          <td className="px-3 py-3 font-semibold">${Number(b.amount || 0).toFixed(2)}</td>
                           <td className="px-5 py-3">
                             <Badge variant={b.status}>{b.status}</Badge>
                           </td>

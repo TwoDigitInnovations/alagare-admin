@@ -90,7 +90,7 @@ export default function BookingsPage() {
                 </div>
                 <p className="mb-1 text-sm text-[#64748b]">{b.route}</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-[#f26522]">€{b.amount}</span>
+                  <span className="text-sm font-bold text-[#f26522]">${b.amount}</span>
                   <button
                     onClick={() => setView(b)}
                     className="flex items-center gap-1 text-xs font-semibold text-[#4a6d00]"
@@ -124,7 +124,7 @@ export default function BookingsPage() {
                     <td className="px-4 py-3 text-[#64748b]">{b.route}</td>
                     <td className="px-4 py-3">{b.date || "—"}</td>
                     <td className="px-4 py-3">{b.seats}</td>
-                    <td className="px-4 py-3 font-bold text-[#f26522]">€{b.amount}</td>
+                    <td className="px-4 py-3 font-bold text-[#f26522]">${b.amount}</td>
                     <td className="px-4 py-3">
                       <Badge variant={b.status}>{b.status}</Badge>
                     </td>
@@ -167,9 +167,9 @@ export default function BookingsPage() {
               ["Arrival Time", view.arrival || "—"],
               ["Booked At", view.createdAt ? new Date(view.createdAt).toLocaleString() : "—"],
               ["Seats", view.seats],
-              ["Operator Base Fare", view.operatorBaseFare !== null ? `€${view.operatorBaseFare}` : "—"],
-              ["Platform Commission", view.commissionAmount !== null ? `€${view.commissionAmount} (${view.commissionRate || 0}%)` : "—"],
-              ["Total Charged", `€${view.amount}`],
+              ["Operator Base Fare", view.operatorBaseFare !== null ? `$${view.operatorBaseFare}` : "—"],
+              ["Platform Commission", view.commissionAmount !== null ? `$${view.commissionAmount} (${view.commissionRate || 0}%)` : "—"],
+              ["Total Charged", `$${view.amount}`],
               ["Status", view.status],
             ].map(([k, v]) => (
               <div
