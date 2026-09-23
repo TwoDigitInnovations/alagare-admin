@@ -417,7 +417,7 @@ export default function OperatorFleet() {
                     <div className="mt-4 flex items-baseline justify-between border-t border-[#f1f5f9] pt-3">
                       <div>
                         <p className="text-[10px] uppercase font-bold tracking-wider text-[#94a3b8]">Seat Fare</p>
-                        <p className="text-xl font-black text-[#4a6d00]">€{r.price}</p>
+                        <p className="text-xl font-black text-[#4a6d00]">${r.price}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-[10px] text-[#64748b]">Available: {r.seatsAvailable}/{r.seats}</p>
@@ -518,7 +518,7 @@ export default function OperatorFleet() {
           </Field>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Field label="Base Fare (€)" required><Input type="number" min="0" step="0.5" placeholder="25" value={routeForm.price} onChange={e => setRouteForm(p => ({ ...p, price: e.target.value }))} required /></Field>
+            <Field label="Base Fare ($)" required><Input type="number" min="0" step="0.5" placeholder="25" value={routeForm.price} onChange={e => setRouteForm(p => ({ ...p, price: e.target.value }))} required /></Field>
             <Field label="Total Seats" required>
               <Input type="number" min="1" placeholder="40" value={routeForm.seats} readOnly disabled />
             </Field>

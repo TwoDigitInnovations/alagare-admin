@@ -166,7 +166,7 @@ export default function RoutesPage() {
                         <p className="text-[#94a3b8]">Duration</p>
                       </div>
                       <div className="rounded-lg bg-[#f8fafc] p-2">
-                        <p className="font-semibold text-[#f26522]">€{r.price}</p>
+                        <p className="font-semibold text-[#f26522]">${r.price}</p>
                         <p className="text-[#94a3b8]">Price</p>
                       </div>
                     </div>
@@ -216,7 +216,7 @@ export default function RoutesPage() {
                           <p className="text-[11px] text-[#94a3b8]">{r.duration}</p>
                         </td>
 
-                        <td className="py-3.5 px-4 font-bold text-[#f26522]">€{r.price}</td>
+                        <td className="py-3.5 px-4 font-bold text-[#f26522]">${r.price}</td>
 
                         <td className="py-3.5 px-4 text-[#64748b]">
                           <span className="rounded-lg bg-[#f8fafc] px-2 py-1 font-bold text-[#4a6d00]">
@@ -312,7 +312,7 @@ export default function RoutesPage() {
 
                 <div className="rounded-xl border border-[#e2e8f0] p-3 space-y-1">
                   <span className="text-[#94a3b8] font-bold uppercase tracking-wider text-[10px]">Duration & Pricing</span>
-                  <p className="font-bold text-[#f26522] text-sm">€{selectedRoute.price} / seat</p>
+                  <p className="font-bold text-[#f26522] text-sm">${selectedRoute.price} / seat</p>
                   <p className="text-[#64748b]">Total Trip Duration: {selectedRoute.duration || "N/A"}</p>
                   <p className="text-[11px] text-[#4a6d00] font-medium">Seats: {selectedRoute.seatsAvailable || 0}/{selectedRoute.seats || 40} available</p>
                 </div>

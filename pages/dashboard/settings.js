@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import AdminLayout from "@/components/AdminLayout";
 import { Api } from "@/services/service";
 import { toastSuccess, toastError } from "@/utils/swal";
-import { Save, Bell, Shield, Globe, Mail, Percent, Receipt, CreditCard } from "lucide-react";
+import { Save, Bell, Shield, Globe, Mail, Percent, Receipt, CreditCard, Wrench, AlertTriangle } from "lucide-react";
 
 /** Outside page — avoids remount/jank on every toggle click */
 function SettingsToggle({ label, desc, checked, onChange }) {
@@ -20,7 +20,7 @@ function SettingsToggle({ label, desc, checked, onChange }) {
         onClick={() => onChange(!checked)}
         className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition-colors duration-200 ${
           checked
-            ? "border-[#4a6d00] bg-[#4a6d00]"
+            ? "border-[#dc2626] bg-[#dc2626]"
             : "border-[#cbd5e1] bg-[#e2e8f0]"
         }`}
       >
@@ -37,14 +37,18 @@ function SettingsToggle({ label, desc, checked, onChange }) {
 const EMPTY_FORM = {
   platformName: "Alagare",
   supportEmail: "support@alagare.com",
-  currency: "EUR",
-  timezone: "Europe/Berlin",
+  currency: "USD",
+  timezone: "UTC",
   commissionRate: "5",
   taxRate: "0",
   serviceFee: "0",
   notifyBookings: true,
   notifyUsers: true,
   maintenanceMode: false,
+  maintenanceTitleEn: "Under Maintenance",
+  maintenanceMessageEn: "Alagare is currently undergoing scheduled maintenance. We'll be back shortly!",
+  maintenanceTitleFr: "Maintenance en cours",
+  maintenanceMessageFr: "Alagare est actuellement en maintenance planifiée. Nous serons bientôt de retour !",
 };
 
 export default function SettingsPage() {
@@ -69,6 +73,10 @@ export default function SettingsPage() {
             notifyBookings: !!s.notifyBookings,
             notifyUsers: !!s.notifyUsers,
             maintenanceMode: !!s.maintenanceMode,
+            maintenanceTitleEn: s.maintenanceTitleEn || EMPTY_FORM.maintenanceTitleEn,
+            maintenanceMessageEn: s.maintenanceMessageEn || EMPTY_FORM.maintenanceMessageEn,
+            maintenanceTitleFr: s.maintenanceTitleFr || EMPTY_FORM.maintenanceTitleFr,
+            maintenanceMessageFr: s.maintenanceMessageFr || EMPTY_FORM.maintenanceMessageFr,
           });
         }
       })
@@ -108,14 +116,18 @@ export default function SettingsPage() {
         setForm({
           platformName: s.platformName || "",
           supportEmail: s.supportEmail || "",
-          currency: s.currency || "EUR",
-          timezone: s.timezone || "Europe/Berlin",
+          currency: s.currency || "USD",
+          timezone: s.timezone || "UTC",
           commissionRate: s.commissionRate != null ? String(s.commissionRate) : "0",
           taxRate: s.taxRate != null ? String(s.taxRate) : "0",
           serviceFee: s.serviceFee != null ? String(s.serviceFee) : "0",
           notifyBookings: !!s.notifyBookings,
           notifyUsers: !!s.notifyUsers,
           maintenanceMode: !!s.maintenanceMode,
+          maintenanceTitleEn: s.maintenanceTitleEn || EMPTY_FORM.maintenanceTitleEn,
+          maintenanceMessageEn: s.maintenanceMessageEn || EMPTY_FORM.maintenanceMessageEn,
+          maintenanceTitleFr: s.maintenanceTitleFr || EMPTY_FORM.maintenanceTitleFr,
+          maintenanceMessageFr: s.maintenanceMessageFr || EMPTY_FORM.maintenanceMessageFr,
         });
       }
       toastSuccess("Settings saved");
@@ -253,40 +265,12 @@ export default function SettingsPage() {
                     className="w-full rounded-xl border border-[#e2e8f0] px-3 py-2.5 pr-8 text-sm font-semibold text-[#1e293b] outline-none focus:border-[#4a6d00]"
                   />
                   <span className="absolute right-3 top-2.5 text-xs font-bold text-[#64748b]">
-                    {form.currency || "EUR"}
+                    $
                   </span>
                 </div>
                 <p className="mt-1 text-[11px] text-[#94a3b8]">
-                  {effectiveFee > 0 ? `+${effectiveFee} flat fee per booking` : "0 (No booking fee)"}
+                  {effectiveFee > 0 ? `+$${effectiveFee} flat fee per booking` : "$0 (No booking fee)"}
                 </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[#64748b]">Currency</label>
-                <select
-                  value={form.currency}
-                  onChange={(e) => setForm({ ...form, currency: e.target.value })}
-                  className="w-full rounded-xl border border-[#e2e8f0] px-3 py-2.5 text-sm outline-none focus:border-[#4a6d00]"
-                >
-                  <option value="EUR">EUR</option>
-                  <option value="USD">USD</option>
-                  <option value="GBP">GBP</option>
-                  <option value="INR">INR</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-[#64748b]">Timezone</label>
-                <select
-                  value={form.timezone}
-                  onChange={(e) => setForm({ ...form, timezone: e.target.value })}
-                  className="w-full rounded-xl border border-[#e2e8f0] px-3 py-2.5 text-sm outline-none focus:border-[#4a6d00]"
-                >
-                  <option value="Europe/Berlin">Europe/Berlin</option>
-                  <option value="Europe/London">Europe/London</option>
-                  <option value="Asia/Kolkata">Asia/Kolkata</option>
-                </select>
               </div>
             </div>
           </div>
@@ -310,12 +294,96 @@ export default function SettingsPage() {
               checked={form.notifyUsers}
               onChange={(v) => setForm((prev) => ({ ...prev, notifyUsers: v }))}
             />
+          </div>
+        </div>
+
+        {/* System & Maintenance Mode Section */}
+        <div className={`rounded-2xl border transition-all p-5 bg-white ${form.maintenanceMode ? 'border-amber-300 ring-2 ring-amber-100' : 'border-[#e2e8f0]'}`}>
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Wrench size={18} className={form.maintenanceMode ? "text-amber-600" : "text-[#4a6d00]"} />
+              <h2 className="font-bold text-[#1e293b]">Maintenance Mode</h2>
+            </div>
+            {form.maintenanceMode && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
+                <AlertTriangle size={12} /> App Disabled for Users
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-4">
             <SettingsToggle
-              label="Maintenance Mode"
-              desc="Disable app for maintenance"
+              label="Enable Maintenance Mode"
+              desc="Temporarily disable customer mobile app access and display maintenance screen"
               checked={form.maintenanceMode}
               onChange={(v) => setForm((prev) => ({ ...prev, maintenanceMode: v }))}
             />
+
+            {form.maintenanceMode && (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/70 p-4">
+                <p className="text-xs font-semibold text-amber-900 mb-3">
+                  ⚠️ When active, mobile users on any screen will immediately be shown this maintenance message in their selected language.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* English Customization */}
+                  <div className="rounded-xl border border-[#e2e8f0] bg-white p-3.5 space-y-2.5">
+                    <div className="flex items-center gap-1.5 border-b border-[#f1f5f9] pb-2">
+                      <span className="text-base">🇬🇧</span>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#1e293b]">English Notice</h3>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[#64748b] mb-1">Title (English)</label>
+                      <input
+                        type="text"
+                        value={form.maintenanceTitleEn}
+                        onChange={(e) => setForm((p) => ({ ...p, maintenanceTitleEn: e.target.value }))}
+                        placeholder="e.g. Under Maintenance"
+                        className="w-full rounded-lg border border-[#cbd5e1] px-3 py-2 text-xs font-medium text-[#1e293b] focus:border-[#4a6d00] focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[#64748b] mb-1">Message (English)</label>
+                      <textarea
+                        rows={3}
+                        value={form.maintenanceMessageEn}
+                        onChange={(e) => setForm((p) => ({ ...p, maintenanceMessageEn: e.target.value }))}
+                        placeholder="Explain maintenance to English users..."
+                        className="w-full rounded-lg border border-[#cbd5e1] px-3 py-2 text-xs font-normal text-[#1e293b] focus:border-[#4a6d00] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* French Customization */}
+                  <div className="rounded-xl border border-[#e2e8f0] bg-white p-3.5 space-y-2.5">
+                    <div className="flex items-center gap-1.5 border-b border-[#f1f5f9] pb-2">
+                      <span className="text-base">🇫🇷</span>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#1e293b]">Message Français</h3>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[#64748b] mb-1">Titre (Français)</label>
+                      <input
+                        type="text"
+                        value={form.maintenanceTitleFr}
+                        onChange={(e) => setForm((p) => ({ ...p, maintenanceTitleFr: e.target.value }))}
+                        placeholder="ex. Maintenance en cours"
+                        className="w-full rounded-lg border border-[#cbd5e1] px-3 py-2 text-xs font-medium text-[#1e293b] focus:border-[#4a6d00] focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[#64748b] mb-1">Message (Français)</label>
+                      <textarea
+                        rows={3}
+                        value={form.maintenanceMessageFr}
+                        onChange={(e) => setForm((p) => ({ ...p, maintenanceMessageFr: e.target.value }))}
+                        placeholder="Expliquer la maintenance aux utilisateurs francophones..."
+                        className="w-full rounded-lg border border-[#cbd5e1] px-3 py-2 text-xs font-normal text-[#1e293b] focus:border-[#4a6d00] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

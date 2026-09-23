@@ -17,6 +17,7 @@ export default function HomeContentPage() {
     promoTitle: "Save 20% on First Trip",
     promoDesc: "Use code FIRSTRIDE at checkout for all intercity bookings this month.",
     promoCode: "FIRSTRIDE",
+    promoDiscountPercent: 20,
     headerImage: "",
     promoImage: "",
   });
@@ -31,6 +32,7 @@ export default function HomeContentPage() {
             promoTitle: home.promoTitle || "",
             promoDesc: home.promoDesc || "",
             promoCode: home.promoCode || "",
+            promoDiscountPercent: home.promoDiscountPercent ?? 20,
             headerImage: home.headerImage || "",
             promoImage: home.promoImage || "",
           });
@@ -42,11 +44,13 @@ export default function HomeContentPage() {
 
   const save = async (e) => {
     e.preventDefault();
+    const clampedPercent = Math.min(100, Math.max(0, Number(form.promoDiscountPercent) || 0));
     const fd = new FormData();
     fd.append("promoBadge", form.promoBadge);
     fd.append("promoTitle", form.promoTitle);
     fd.append("promoDesc", form.promoDesc);
     fd.append("promoCode", form.promoCode);
+    fd.append("promoDiscountPercent", String(clampedPercent));
     if (headerFile) fd.append("headerImage", headerFile);
     if (promoFile) fd.append("promoImage", promoFile);
     try {
@@ -119,12 +123,29 @@ export default function HomeContentPage() {
             { l: "Title", n: "promoTitle" },
             { l: "Description", n: "promoDesc" },
             { l: "Promo Code", n: "promoCode" },
-          ].map(({ l, n }) => (
+            { l: "Discount Percentage (%)", n: "promoDiscountPercent", type: "number", placeholder: "e.g. 10 or 20", min: 0, max: 100 },
+          ].map(({ l, n, type, placeholder, min, max }) => (
             <div key={n} className="mb-3">
               <label className="mb-1 block text-xs font-medium text-[#64748b]">{l}</label>
               <input
-                value={form[n]}
-                onChange={(e) => setForm({ ...form, [n]: e.target.value })}
+                type={type || "text"}
+                value={form[n] ?? ""}
+                placeholder={placeholder}
+                min={min}
+                max={max}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (n === "promoDiscountPercent") {
+                    if (val === "") {
+                      setForm({ ...form, [n]: "" });
+                    } else {
+                      const num = Math.min(100, Math.max(0, Number(val)));
+                      setForm({ ...form, [n]: isNaN(num) ? "" : num });
+                    }
+                  } else {
+                    setForm({ ...form, [n]: val });
+                  }
+                }}
                 className="w-full rounded-xl border border-[#e2e8f0] px-3 py-2.5 text-sm outline-none focus:border-[#4a6d00]"
               />
             </div>

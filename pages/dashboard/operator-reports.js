@@ -169,7 +169,7 @@ export default function OperatorReportsPage() {
               </div>
             </div>
             <p className="mt-3 text-2xl font-black text-[#f26522]">
-              €{data.summary.grossRevenue.toLocaleString("en-US")}
+              ${data.summary.grossRevenue.toLocaleString("en-US")}
             </p>
             <p className="mt-1 text-xs text-[#64748b]">Total ticket sales processed</p>
           </div>
@@ -182,7 +182,7 @@ export default function OperatorReportsPage() {
               </div>
             </div>
             <p className="mt-3 text-2xl font-black text-blue-600">
-              €{data.summary.avgTicketValue.toLocaleString("en-US")}
+              ${data.summary.avgTicketValue.toLocaleString("en-US")}
             </p>
             <p className="mt-1 text-xs text-[#64748b]">Average fare per seat booking</p>
           </div>
@@ -235,7 +235,7 @@ export default function OperatorReportsPage() {
                           </div>
                         </td>
                         <td className="py-4 text-[#64748b]">{r.busType}</td>
-                        <td className="py-4 font-mono text-[#1e293b]">€{r.price}</td>
+                        <td className="py-4 font-mono text-[#1e293b]">${r.price}</td>
                         <td className="py-4 font-semibold text-[#1e293b]">{r.bookingsCount}</td>
                         <td className="py-4">
                           <div className="flex items-center gap-2 max-w-[140px]">
@@ -246,7 +246,7 @@ export default function OperatorReportsPage() {
                           </div>
                         </td>
                         <td className="py-4 text-right font-bold text-[#4a6d00]">
-                          €{r.revenue.toLocaleString("en-US")}
+                          ${r.revenue.toLocaleString("en-US")}
                         </td>
                       </tr>
                     ))}
@@ -262,11 +262,11 @@ export default function OperatorReportsPage() {
                         <Bus size={15} className="text-[#4a6d00]" />
                         <span className="font-bold text-xs text-[#1e293b]">{r.title}</span>
                       </div>
-                      <span className="font-bold text-xs text-[#4a6d00]">€{r.revenue.toLocaleString("en-US")}</span>
+                      <span className="font-bold text-xs text-[#4a6d00]">${r.revenue.toLocaleString("en-US")}</span>
                     </div>
 
                     <div className="flex items-center justify-between text-xs text-[#64748b]">
-                      <span>{r.busType} (€{r.price}/seat)</span>
+                      <span>{r.busType} (${r.price}/seat)</span>
                       <span>{r.bookingsCount} bookings</span>
                     </div>
 
