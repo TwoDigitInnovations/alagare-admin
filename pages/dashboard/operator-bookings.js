@@ -175,7 +175,7 @@ export default function OperatorBookings() {
           </div>
           <div className="rounded-2xl border border-[#e2e8f0] bg-white p-4">
             <p className="text-xs font-semibold text-[#64748b]">Estimated Revenue</p>
-            <p className="mt-1 text-2xl font-black text-[#f26522]">€{totalRevenue.toFixed(2)}</p>
+            <p className="mt-1 text-2xl font-black text-[#f26522]">${totalRevenue.toFixed(2)}</p>
           </div>
         </div>
 
@@ -229,7 +229,7 @@ export default function OperatorBookings() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-1">
-                    <span className="text-base font-black text-[#f26522]">€{b.amount}</span>
+                    <span className="text-base font-black text-[#f26522]">${b.amount}</span>
                     <button onClick={() => setView(b)}
                       className="flex items-center gap-1 rounded-lg bg-[#eaf5dd] px-3 py-1.5 text-xs font-bold text-[#4a6d00] hover:bg-[#d8ecbe]">
                       <Eye size={13} /> Details
@@ -264,7 +264,7 @@ export default function OperatorBookings() {
                       <td className="px-5 py-4 font-medium text-[#374151]">{b.route}</td>
                       <td className="px-5 py-4 text-[#64748b]">{b.date || "N/A"}</td>
                       <td className="px-5 py-4 font-semibold text-[#1e293b]">{b.seats}</td>
-                      <td className="px-5 py-4 font-black text-[#f26522]">€{b.amount}</td>
+                      <td className="px-5 py-4 font-black text-[#f26522]">${b.amount}</td>
                       <td className="px-5 py-4"><StatusBadge status={b.status} /></td>
                       <td className="px-5 py-4 text-right">
                         <button onClick={() => setView(b)}
@@ -303,7 +303,7 @@ export default function OperatorBookings() {
                 ["Arrival Time", view.arrival || "N/A"],
                 ["Total Seats", view.seats],
                 ["Seat Numbers", view.seatKeys && view.seatKeys.length > 0 ? view.seatKeys.map(formatSeatKey).join(", ") : "Auto Assigned"],
-                ["Total Fare", `€${view.amount}`],
+                ["Total Fare", `$${view.amount}`],
                 ["Booked At", view.createdAt ? new Date(view.createdAt).toLocaleString() : "N/A"],
               ].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between rounded-xl bg-[#f8fafc] px-4 py-2.5">

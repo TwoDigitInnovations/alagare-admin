@@ -94,7 +94,7 @@ export default function AdminSettlementsPage() {
                 <Wallet size={16} />
               </div>
             </div>
-            <p className="mt-2 text-xl font-black text-[#1e293b]">€{totalRequested.toLocaleString("en-US")}</p>
+            <p className="mt-2 text-xl font-black text-[#1e293b]">${totalRequested.toLocaleString("en-US")}</p>
             <p className="mt-0.5 text-[11px] text-[#64748b]">{settlements.length} total requests</p>
           </div>
 
@@ -116,7 +116,7 @@ export default function AdminSettlementsPage() {
                 <CheckCircle2 size={16} />
               </div>
             </div>
-            <p className="mt-2 text-xl font-black text-emerald-600">€{settledTotal.toLocaleString("en-US")}</p>
+            <p className="mt-2 text-xl font-black text-emerald-600">${settledTotal.toLocaleString("en-US")}</p>
             <p className="mt-0.5 text-[11px] text-[#64748b]">{settledCount} completed</p>
           </div>
 
@@ -211,11 +211,11 @@ export default function AdminSettlementsPage() {
                         {/* Financials Breakdown */}
                         <td className="px-3.5 py-3">
                           <p className="font-bold text-[#4a6d00] text-sm">
-                            €{Number(netVal).toLocaleString("en-US")}
+                            ${Number(netVal).toLocaleString("en-US")}
                           </p>
                           <p className="text-[10.5px] text-[#64748b]">
-                            Req: €{Number(s.requestedAmount || s.amount || 0).toLocaleString("en-US")}
-                            {s.commissionDeducted ? ` · Comm: €${s.commissionDeducted}` : ""}
+                            Req: ${Number(s.requestedAmount || s.amount || 0).toLocaleString("en-US")}
+                            {s.commissionDeducted ? ` · Comm: $${s.commissionDeducted}` : ""}
                           </p>
                         </td>
 
@@ -340,19 +340,19 @@ export default function AdminSettlementsPage() {
                 <div className="rounded-xl border border-[#e2e8f0] p-3 bg-white">
                   <span className="text-[11px] font-medium text-[#64748b]">Requested Amount</span>
                   <p className="text-sm font-black text-[#1e293b] mt-0.5">
-                    €{Number(selectedSettlement.requestedAmount || selectedSettlement.amount || 0).toLocaleString("en-US")}
+                    ${Number(selectedSettlement.requestedAmount || selectedSettlement.amount || 0).toLocaleString("en-US")}
                   </p>
                 </div>
                 <div className="rounded-xl border border-[#e2e8f0] p-3 bg-white">
                   <span className="text-[11px] font-medium text-[#64748b]">Platform Commission</span>
                   <p className="text-sm font-black text-[#f26522] mt-0.5">
-                    €{Number(selectedSettlement.commissionDeducted || selectedSettlement.commission || 0).toLocaleString("en-US")}
+                    ${Number(selectedSettlement.commissionDeducted || selectedSettlement.commission || 0).toLocaleString("en-US")}
                   </p>
                 </div>
                 <div className="rounded-xl border border-[#d7e4c2] p-3 bg-[#f4f7ee]">
                   <span className="text-[11px] font-medium text-[#4a6d00]">Net Operator Payout</span>
                   <p className="text-sm font-black text-[#4a6d00] mt-0.5">
-                    €{Number(selectedSettlement.netPayout ?? selectedSettlement.amount ?? selectedSettlement.requestedAmount ?? 0).toLocaleString("en-US")}
+                    ${Number(selectedSettlement.netPayout ?? selectedSettlement.amount ?? selectedSettlement.requestedAmount ?? 0).toLocaleString("en-US")}
                   </p>
                 </div>
               </div>
