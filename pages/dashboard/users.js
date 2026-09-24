@@ -21,6 +21,7 @@ export default function UsersPage() {
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState(emptyForm);
 
+  const [saving, setSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -28,8 +29,8 @@ export default function UsersPage() {
     setLoading(true);
     Api("get", "admin/users", null, router)
       .then((res) => {
-        const list = res?.data?.users || res?.users || [];
-        setUsers(list);
+        const list = res?.data?.users || res?.users || (Array.isArray(res?.data) ? res.data : []);
+        setUsers(Array.isArray(list) ? list : []);
       })
       .catch((err) => {
         console.error("Fetch users error:", err);
@@ -39,7 +40,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [router]);
+  }, []);
 
   const openEdit = (u) => {
     setEditId(u._id || u.id);
@@ -54,19 +55,45 @@ export default function UsersPage() {
   };
 
   const save = async (e) => {
-    e.preventDefault();
-    if (!editId) return;
+    if (e && e.preventDefault) e.preventDefault();
+    if (!editId || saving) return;
+    setSaving(true);
     try {
-      const res = await Api("put", `admin/users/${editId}`, form, router);
-      if (res?.status === true || res?.user || res?.message) {
+      const payload = {
+        name: (form.name || "").trim(),
+        email: form.email ? form.email.trim() : "",
+        phone: (form.phone || "").trim(),
+        member: form.member || "Standard",
+        membership: form.member || "Standard",
+        status: form.status || "active",
+      };
+      const res = await Api("put", `admin/users/${editId}`, payload, router);
+      if (res?.status === true || res?.data?.user || res?.user || res?.message) {
         toastSuccess("User updated successfully!");
-        fetchUsers();
+        setUsers((prev) =>
+          prev.map((u) =>
+            (u._id || u.id) === editId
+              ? {
+                  ...u,
+                  name: payload.name || u.name,
+                  email: payload.email || "",
+                  phone: payload.phone || u.phone,
+                  member: payload.member,
+                  status: payload.status,
+                }
+              : u
+          )
+        );
         setModal(false);
+        fetchUsers();
       } else {
-        toastError(res?.message || "Failed to update user");
+        toastError(res?.message || res?.data?.message || "Failed to update user");
       }
     } catch (err) {
-      toastError(err?.message || "Error saving user");
+      console.error("Save user error:", err);
+      toastError(err?.message || err?.data?.message || "Error saving user");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -212,7 +239,7 @@ export default function UsersPage() {
                           <td className="py-3.5 px-4 space-y-1">
                             <div className="flex items-center gap-1.5 text-[#64748b]">
                               <Mail size={12} className="text-[#94a3b8]" />
-                              <span>{u.email}</span>
+                              <span>{u.email || "N/A"}</span>
                             </div>
                             <div className="flex items-center gap-1.5 text-[#64748b]">
                               <Phone size={12} className="text-[#94a3b8]" />
@@ -335,12 +362,14 @@ export default function UsersPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-[#64748b]">Email Address</label>
+              <label className="mb-1 block text-xs font-medium text-[#64748b]">
+                Email Address <span className="text-[#94a3b8] font-normal text-[11px]">(Optional)</span>
+              </label>
               <input
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                required
+                placeholder="e.g. user@example.com"
                 className="w-full rounded-xl border border-[#e2e8f0] px-3 py-2.5 text-sm outline-none focus:border-[#4a6d00]"
               />
             </div>
@@ -394,9 +423,10 @@ export default function UsersPage() {
               </button>
               <button
                 type="submit"
-                className="flex-1 rounded-xl bg-[#4a6d00] py-2.5 text-sm font-semibold text-white hover:bg-[#3d5a00] transition"
+                disabled={saving}
+                className="flex-1 rounded-xl bg-[#4a6d00] py-2.5 text-sm font-semibold text-white hover:bg-[#3d5a00] disabled:opacity-60 transition"
               >
-                Update User
+                {saving ? "Updating..." : "Update User"}
               </button>
             </div>
           </form>
